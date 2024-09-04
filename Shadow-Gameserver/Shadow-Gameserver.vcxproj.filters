@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Gameserver">
+      <UniqueIdentifier>{cc2af69c-40c0-4f0c-855e-8548975399cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gameserver\Header">
+      <UniqueIdentifier>{09fa9823-0f4b-4c8d-9160-4b72c9422590}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gameserver\Source">
+      <UniqueIdentifier>{d31e8d27-933a-40cf-af30-4037afe09030}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Gameserver</Filter>
+    </ClCompile>
+    <ClCompile Include="misc.cpp">
+      <Filter>Gameserver\Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="misc.h">
+      <Filter>Gameserver\Header</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
