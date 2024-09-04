@@ -7,6 +7,8 @@ DWORD WINAPI Main(LPVOID)
     freopen_s(&I, "CONOUT$", "w+", stdout);
     SetConsoleTitleA("Shadow - 12.61");
     
+    UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
+    UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), L"open Apollo_Terrain", nullptr);
 
     return 0;
 }
