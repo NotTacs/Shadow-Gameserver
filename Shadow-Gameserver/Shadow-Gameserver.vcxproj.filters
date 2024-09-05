@@ -36,6 +36,12 @@
     <ClCompile Include="SDK\SDK\Engine_functions.cpp">
       <Filter>SDK</Filter>
     </ClCompile>
+    <ClCompile Include="PE.cpp">
+      <Filter>Gameserver\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Gamemode.cpp">
+      <Filter>Gameserver\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="misc.h">
@@ -43,6 +49,12 @@
     </ClInclude>
     <ClInclude Include="SDK\SDK.hpp">
       <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="PE.h">
+      <Filter>Gameserver\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Gamemode.h">
+      <Filter>Gameserver\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,4 +1,6 @@
 #include "misc.h"
+#include "PE.h"
+#include "Gamemode.h"
 
 DWORD WINAPI Main(LPVOID)
 {
@@ -9,6 +11,12 @@ DWORD WINAPI Main(LPVOID)
     
     UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), L"open Apollo_Terrain", nullptr);
+
+    Hooks::AttachHook(ImageBase + Offsets::ProcessEvent, ProcessEventHook);
+
+    Hooks::AttachHook(ImageBase + 0x46FAA40, ReadyToStartMatchHook);
+
+    Misc::DumpFunctions();
 
     return 0;
 }
@@ -21,7 +29,7 @@ BOOL APIENTRY DllMain( HMODULE hModule, DWORD  reason, LPVOID lpReserved)
         CreateThread(nullptr, 0, Main, nullptr, 0, 0);
         break;
     case DLL_PROCESS_DETACH:
-        DetachHooks();
+        Hooks::DetachHooks();
         break;
     }
     return TRUE;

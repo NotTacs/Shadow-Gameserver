@@ -147,12 +147,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Gamemode.h" />
     <ClInclude Include="misc.h" />
+    <ClInclude Include="PE.h" />
     <ClInclude Include="SDK\SDK.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Gamemode.cpp" />
     <ClCompile Include="misc.cpp" />
+    <ClCompile Include="PE.cpp" />
     <ClCompile Include="SDK\SDK\Basic.cpp" />
     <ClCompile Include="SDK\SDK\CoreUObject_functions.cpp" />
     <ClCompile Include="SDK\SDK\Engine_functions.cpp" />

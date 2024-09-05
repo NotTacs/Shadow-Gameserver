@@ -13,15 +13,10 @@ void Hooks::DetachHooks()
 	DetourTransactionCommit();
 }
 
-void Hooks::AttachHook(uintptr_t Address, PVOID Hook, PVOID OG)
+void Hooks::AttachHook(uintptr_t Address, PVOID Hook)
 {
 	DetourTransactionBegin();
 	DetourUpdateThread(GetCurrentThread());
-
-	if (OG)
-	{
-		OG = decltype(OG)(ImageBase + Address);
-	}
 
 	DetourAttach(&(PVOID&)Address, Hook);
 
@@ -42,6 +37,9 @@ std::vector<UObject*> Misc::GetObjectsOfClass(UClass* Class)
 	for (int i = 0; i < UObject::GObjects->Num(); i++)
 	{
 		UObject* Object = UObject::GObjects->GetByIndex(i);
+
+		if (!Object) continue;
+
 		if (Object->IsA(Class))
 			Objects.push_back(Object);
 	}
@@ -51,10 +49,8 @@ std::vector<UObject*> Misc::GetObjectsOfClass(UClass* Class)
 
 void Misc::DumpFunctions()
 {
-	auto Functions = GetObjectsOfClass(UFunction::StaticClass());
-
+	auto Functions = Misc::GetObjectsOfClass(UFunction::StaticClass());
 	std::ofstream LogFile("Functions.txt");
-
 	for (UObject* Object : Functions)
 	{
 		auto Function = reinterpret_cast<UFunction*>(Object);
@@ -62,4 +58,21 @@ void Misc::DumpFunctions()
 	}
 
 	LogFile.close();
+}
+
+int Misc::ConvertToFunc(int Index, void** VFT)
+{
+	auto SomeIndex = Index * 8;
+	auto FuncOffset = SomeIndex + __int64(VFT);
+
+	return FuncOffset;
+}
+
+int Misc::FuncToIndex(uintptr_t Offset, void** VFT)
+{
+	int Vft = __int64(VFT);
+
+	auto smart = Offset - Vft;
+
+	return smart / 8;
 }
