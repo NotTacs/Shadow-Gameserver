@@ -68,11 +68,26 @@ int Misc::ConvertToFunc(int Index, void** VFT)
 	return FuncOffset;
 }
 
+int Hooks::retonehook()
+{
+	return 1;
+}
+
+int Hooks::retzerohook()
+{
+	return 0;
+}
+
 int Misc::FuncToIndex(uintptr_t Offset, void** VFT)
 {
-	int Vft = __int64(VFT);
+	int Vft = __int64(VFT) - ImageBase;
 
 	auto smart = Offset - Vft;
 
-	return smart / 8;
+	return smart;
+}
+
+void Misc::decToHex(int DecimalValue)
+{
+	std::cout << "Decimal: " << DecimalValue << " -> Hexadecimal: 0x" << std::hex << std::uppercase << DecimalValue << "\n";
 }

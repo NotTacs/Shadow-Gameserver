@@ -7694,19 +7694,52 @@ static_assert(sizeof(FBlueprintInputDelegateBinding) == 0x000004, "Wrong size on
 
 // ScriptStruct Engine.FastArraySerializer
 // 0x0108 (0x0108 - 0x0000)
-struct alignas(0x08) FFastArraySerializer
+struct FFastArraySerializer
 {
 public:
-	uint8                                         Pad_0[0x54];                                       // 0x0000(0x0054)(Fixing Size After Last Property [ Dumper-7 ])
-	int32                                         ArrayReplicationKey;                               // 0x0054(0x0004)(ZeroConstructor, IsPlainOldData, RepSkip, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
-	uint8                                         Pad_58[0xA8];                                      // 0x0058(0x00A8)(Fixing Size After Last Property [ Dumper-7 ])
-	EFastArraySerializerDeltaFlags                DeltaFlags;                                        // 0x0100(0x0001)(ZeroConstructor, Transient, IsPlainOldData, RepSkip, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPrivate)
-	uint8                                         Pad_101[0x7];                                      // 0x0101(0x0007)(Fixing Struct Size After Last Property [ Dumper-7 ])
+	char ItemMap[0x50];
+
+	int32_t IDCounter;
+	int32_t ArrayReplicationKey;
+
+	char GuidReferencesMap[0x50];
+	char GuidReferencesMap_StructDelta[0x50];
+
+	int32_t CachedNumItems;
+	int32_t CachedNumItemsToConsiderForWriting;
+	uint8_t DeltaFlags;
+
+	uint8 Pad_1456[0x7];
+
+	void MarkItemDirty(FFastArraySerializerItem& Item)
+	{
+		if (Item.ReplicationID == -1)
+		{
+			Item.ReplicationID = ++IDCounter;
+			if (IDCounter == -1)
+				IDCounter++;
+		}
+
+		Item.ReplicationKey++;
+		MarkArrayDirty();
+	}
+
+	void MarkArrayDirty()
+	{
+		IncrementArrayReplicationKey();
+
+		CachedNumItems = -1;
+		CachedNumItemsToConsiderForWriting = -1;
+	}
+
+	void IncrementArrayReplicationKey()
+	{
+		ArrayReplicationKey++;
+
+		if (ArrayReplicationKey == -1)
+			ArrayReplicationKey++;
+	}
 };
-static_assert(alignof(FFastArraySerializer) == 0x000008, "Wrong alignment on FFastArraySerializer");
-static_assert(sizeof(FFastArraySerializer) == 0x000108, "Wrong size on FFastArraySerializer");
-static_assert(offsetof(FFastArraySerializer, ArrayReplicationKey) == 0x000054, "Member 'FFastArraySerializer::ArrayReplicationKey' has a wrong offset!");
-static_assert(offsetof(FFastArraySerializer, DeltaFlags) == 0x000100, "Member 'FFastArraySerializer::DeltaFlags' has a wrong offset!");
 
 // ScriptStruct Engine.InputAxisProperties
 // 0x0010 (0x0010 - 0x0000)

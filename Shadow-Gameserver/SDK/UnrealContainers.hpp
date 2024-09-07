@@ -294,6 +294,11 @@ namespace UC
 			return true;
 		}
 
+		inline void Free()
+		{
+			VirtualFree(Data, 0, MEM_RELEASE);
+		}
+
 		inline void Clear()
 		{
 			NumElements = 0;
