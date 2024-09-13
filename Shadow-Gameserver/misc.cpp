@@ -24,6 +24,20 @@ void Hooks::AttachHook(uintptr_t Address, PVOID Hook)
 	DetourTransactionCommit();
 }
 
+void Hooks::AttachHook2(uintptr_t Address, PVOID Hook, PVOID OG)
+{
+	MH_CreateHook((LPVOID)Address, Hook, &OG);
+	MH_EnableHook((LPVOID)Address);
+}
+
+void Hooks::PatchByte(uintptr_t ptr, uint8_t byte)
+{
+	DWORD og;
+	VirtualProtect(LPVOID(ptr), 1, PAGE_EXECUTE_READWRITE, &og);
+	*(uint8_t*)(ptr) = byte;
+	VirtualProtect(LPVOID(ptr), 1, og, &og);
+}
+
 void Misc::KillServer()
 {
 	UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), L"demostop", nullptr);
@@ -66,6 +80,16 @@ int Misc::ConvertToFunc(int Index, void** VFT)
 	auto FuncOffset = SomeIndex + __int64(VFT);
 
 	return FuncOffset;
+}
+
+template<typename T>
+T* Misc::SpawnActor(FTransform Transform)
+{
+	AActor* Actor = UGameplayStatics::BeginDeferredActorSpawnFromClass(UWorld::GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, nullptr);
+
+	T* SpawnedActor = reinterpret_cast<T*>UGameplayStatics::FinishSpawningActor(Actor, Transform);
+
+	return SpawnedActor;
 }
 
 int Hooks::retonehook()

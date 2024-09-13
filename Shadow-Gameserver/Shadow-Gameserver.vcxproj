@@ -120,7 +120,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>C:\Users\unepi\GitHub\Shadow-Gameserver\Shadow-Gameserver\Includes;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>detours/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>detours/detours.lib;minhook/minhook.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,12 +143,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>C:\Users\unepi\GitHub\Shadow-Gameserver\Shadow-Gameserver\Includes;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>detours/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>detours/detours.lib;minhook/minhook.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Gamemode.h" />
     <ClInclude Include="GameSessions.h" />
+    <ClInclude Include="MinHook.h" />
     <ClInclude Include="misc.h" />
     <ClInclude Include="NetDriver.h" />
     <ClInclude Include="PE.h" />

@@ -68,5 +68,6 @@
     <ClInclude Include="GameSessions.h">
       <Filter>Gameserver\Header</Filter>
     </ClInclude>
+    <ClInclude Include="MinHook.h" />
   </ItemGroup>
 </Project>
