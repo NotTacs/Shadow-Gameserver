@@ -224,6 +224,8 @@ namespace UC
 		inline const ValueType& Value() const { return Second; }
 	};
 
+	static void (*FFree)(void* Array) = decltype(FFree)(uintptr_t(GetModuleHandle(0)) + 0x2bde510);
+
 	template<typename ArrayElementType>
 	class TArray
 	{
@@ -296,7 +298,7 @@ namespace UC
 
 		inline void Free()
 		{
-			VirtualFree(Data, 0, MEM_RELEASE);
+			FFree(Data);
 		}
 
 		inline void Clear()

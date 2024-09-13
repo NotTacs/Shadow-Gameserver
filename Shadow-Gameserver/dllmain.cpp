@@ -24,7 +24,7 @@ DWORD WINAPI Main(LPVOID)
 
     //Hooks::AttachHook(ImageBase + 0x420f5d0, Hooks::retzerohook);
 
-    Hooks::AttachHook(ImageBase + 0x46FAA40, ReadyToStartMatchHook);
+    Hooks::AttachHook2(ImageBase + 0x194ccb0, ReadyToStartMatchHook, nullptr);
 
     //Hooks::AttachHook(ImageBase + 0x1957130, SpawnDefaultPawnForHook);
 

@@ -62,5 +62,15 @@ namespace Misc
 	void decToHex(int decimalValue);
 
 	template<typename T>
-	T* SpawnActor(FTransform);
+	inline T* SpawnActor()
+	{
+		FTransform Transform = FTransform();
+		Transform.Translation = {};
+		AActor* Actor = UGameplayStatics::BeginDeferredActorSpawnFromClass(UWorld::GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, nullptr);
+
+		T* SpawnedActor = reinterpret_cast<T*>(UGameplayStatics::FinishSpawningActor(Actor, Transform));
+
+		return SpawnedActor;
+	}
+
 }

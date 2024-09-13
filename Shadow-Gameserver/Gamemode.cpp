@@ -32,17 +32,18 @@ bool ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		bFinishedLoading = true;
 	}
 
-	if (!GameState->MapInfo) return false;
-
 	static bool bListening = false;
 	if (!bListening)
 	{
-		AFortOnlineBeaconHost* Beacon = Misc::SpawnActor<AFortOnlineBeaconHost>({});
-		
-		Beacon->ListenPort = 7776;
+		std::cout << "Stuffffffffffffffffffffffffffffffffffffff" << "\n";
 
+		FTransform Transform = {};
+		AFortOnlineBeaconHost* Beacon = Misc::SpawnActor<AFortOnlineBeaconHost>();
+		
 		Imports::InitHost(Beacon);
 		Imports::PauseBeaconRequests(Beacon, false);
+
+		Beacon->ListenPort = 7776;
 
 
 		FName NetDriverDefinition = UKismetStringLibrary::Conv_StringToName(L"GameNetDriver");
@@ -56,9 +57,15 @@ bool ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		Imports::InitListen(UWorld::GetWorld()->NetDriver, UWorld::GetWorld(), URL, false, Error);
 
 		Imports::SetWorld(UWorld::GetWorld()->NetDriver, UWorld::GetWorld());
+		
+		for (FLevelCollection Collection : UWorld::GetWorld()->LevelCollections)
+		{
+			Collection.NetDriver = UWorld::GetWorld()->NetDriver;
+		}
 
 		SetConsoleTitleA("Listening");
 
+		
 		auto TS = UGameplayStatics::GetTimeSeconds(UWorld::GetWorld());
 		auto DR = 60.f;
 
@@ -66,13 +73,9 @@ bool ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		GameMode->WarmupCountdownDuration = DR;
 		GameState->WarmupCountdownStartTime = TS;
 		GameMode->WarmupEarlyCountdownDuration = DR;
+		
 
-		for (FLevelCollection Collection : UWorld::GetWorld()->LevelCollections)
-		{
-			Collection.NetDriver = UWorld::GetWorld()->NetDriver;
-		}
-
-		GameMode->bWorldIsReady = true;
+		//GameMode->bWorldIsReady = true;
 		bListening = true;
 	}
 

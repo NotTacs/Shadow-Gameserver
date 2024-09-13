@@ -82,15 +82,6 @@ int Misc::ConvertToFunc(int Index, void** VFT)
 	return FuncOffset;
 }
 
-template<typename T>
-T* Misc::SpawnActor(FTransform Transform)
-{
-	AActor* Actor = UGameplayStatics::BeginDeferredActorSpawnFromClass(UWorld::GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, nullptr);
-
-	T* SpawnedActor = reinterpret_cast<T*>UGameplayStatics::FinishSpawningActor(Actor, Transform);
-
-	return SpawnedActor;
-}
 
 int Hooks::retonehook()
 {
