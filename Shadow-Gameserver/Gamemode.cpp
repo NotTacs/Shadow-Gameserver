@@ -68,3 +68,8 @@ bool ReadyToStartMatch_Hook(AAthena_GameMode_C* GM)
 	
 	return GM->AlivePlayers.Num() > 0;
 }
+
+APawn* SpawnDefaultPawnFor_Hook(AFortGameModeAthena* GM, AFortPlayerControllerAthena* Controller, AActor* StartSpot)
+{
+	return GM->SpawnDefaultPawnAtTransform(Controller, StartSpot->GetTransform());
+}
