@@ -11,7 +11,7 @@ DWORD Main(LPVOID)
     Sleep(5000);
     
     Hooks::AttachHook(ImageBase + 0x4640A30, ReadyToStartMatch_Hook);
-    Hooks::AttachHook(ImageBase + 0x45CBB10, Test_Hook, Test_OG);
+    // Hooks::AttachHook(ImageBase + 0x45CBB10, Test_Hook, Test_OG);
 
     UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), L"open Apollo_Terrain", nullptr);
@@ -19,10 +19,7 @@ DWORD Main(LPVOID)
     return 0;
 }
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {

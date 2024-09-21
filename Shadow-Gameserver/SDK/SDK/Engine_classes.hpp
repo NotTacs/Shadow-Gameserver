@@ -3991,9 +3991,9 @@ public:
 		return GetDefaultObjImpl<UEngine>();
 	}
 
-	inline class UNetDriver* CreateNetDriver(UWorld* InWorld, FName NetDriverDefinition)
+	class UNetDriver* CreateNetDriver(class UWorld* InWorld, class FName NetDriverDefinition)
 	{
-		UNetDriver* (*CreateNetDriver_OG)(UEngine*, UWorld*, FName) = decltype(CreateNetDriver_OG)(InSDKUtils::GetImageBase() + 0x4573990);
+		UNetDriver* (*CreateNetDriver_OG)(class UEngine*, class UWorld*, class FName) = decltype(CreateNetDriver_OG)(InSDKUtils::GetImageBase() + 0x4573990);
 		return CreateNetDriver_OG(this, InWorld, NetDriverDefinition);
 	}
 };
@@ -6262,10 +6262,10 @@ public:
 		return SetWorld_OG(this, World);
 	}
 
-	inline bool InitListen(UWorld* World, FURL& InUrl, bool bReUseAddressAndPort, FString& Error)
+	inline bool InitListen(UWorld* World, FURL& InUrl, bool bReuseAddressAndPort, FString& Error)
 	{
-		bool (*InitListen_OG)(UNetDriver*, UWorld*, FURL&, bool bReUseAddressAndPort, FString& Error) = decltype(InitListen_OG)(InSDKUtils::GetImageBase() + 0xD44C40);
-		return InitListen_OG(this, World, InUrl, bReUseAddressAndPort, Error);
+		bool (*InitListen_OG)(UNetDriver*, UWorld*, FURL&, bool bReuseAddressAndPort, FString& Error) = decltype(InitListen_OG)(InSDKUtils::GetImageBase() + 0xD44C40);
+		return InitListen_OG(this, World, InUrl, bReuseAddressAndPort, Error);
 	}
 };
 static_assert(alignof(UNetDriver) == 0x000008, "Wrong alignment on UNetDriver");

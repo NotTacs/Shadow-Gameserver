@@ -4,10 +4,10 @@ bool ReadyToStartMatch_Hook(AAthena_GameMode_C* GM)
 {
 	AAthena_GameState_C* GameState = reinterpret_cast<AAthena_GameState_C*>(GM->GameState);
 
-	static bool bSetupPlaylistData = false;
-	if (!bSetupPlaylistData)
+	if (!GM->bWorldIsReady)
 	{
 		UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+
 		if (Playlist)
 		{
 			GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
@@ -20,35 +20,51 @@ bool ReadyToStartMatch_Hook(AAthena_GameMode_C* GM)
 			GameState->CurrentPlaylistId = Playlist->PlaylistId;
 			GameState->OnRep_CurrentPlaylistId();
 
-			bSetupPlaylistData = true;
+			GM->bWorldIsReady = true;
 		}
 	}
 
-	if (!bSetupPlaylistData) return false;
+	if (!GM->bWorldIsReady)
+		return false;
 
 	static bool bReadyToListen = false;
+
 	if (!bReadyToListen)
 	{
 		TArray<AActor*> Actors;
 		UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), AFortPlayerStartWarmup::StaticClass(), &Actors);
 		Actors.Free();
-		if (Actors.Num() == 0) return false;
+
+		if (Actors.Num() == 0) // wdym if == 0 bro u just cleared the array?
+			return false;
+
 		bReadyToListen = true;
 	}
 
-	if (!GameState->MapInfo) return false;
+	if (!GameState->MapInfo)
+		return false;
 
-	static bool bStartedListening = false;
-	if (!bStartedListening)
+	if (!UWorld::GetWorld()->NetDriver)
 	{
-		FName GameNetDriver = UKismetStringLibrary::Conv_StringToName(L"GameNetDriver");
-		UWorld::GetWorld()->NetDriver = UEngine::GetEngine()->CreateNetDriver(UWorld::GetWorld(), GameNetDriver);
+		FName GameNetDriverName = UKismetStringLibrary::Conv_StringToName(L"GameNetDriver");
+		UWorld::GetWorld()->NetDriver = UEngine::GetEngine()->CreateNetDriver(UWorld::GetWorld(), GameNetDriverName);
 
-		SetConsoleTitleA("Listening On Port 7777");
-		GM->bWorldIsReady = true;
-		bStartedListening = true;
+		UWorld::GetWorld()->NetDriver->World = UWorld::GetWorld();
+		UWorld::GetWorld()->NetDriver->NetDriverName = GameNetDriverName;
+
+		FURL ListenURL;
+		ListenURL.Port = 7777;
+
+		FString Error; // never gets used what
+
+		UWorld::GetWorld()->NetDriver->InitListen(UWorld::GetWorld(), ListenURL, false, Error);
+		UWorld::GetWorld()->NetDriver->SetWorld(UWorld::GetWorld());
+
+		UWorld::GetWorld()->LevelCollections[0].NetDriver = UWorld::GetWorld()->NetDriver;
+		UWorld::GetWorld()->LevelCollections[1].NetDriver = UWorld::GetWorld()->NetDriver;
+
+		SetConsoleTitleA("Listening on Port 7777");
 	}
-
 	
 	return GM->AlivePlayers.Num() > 0;
 }
