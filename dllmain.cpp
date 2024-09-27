@@ -1,0 +1,159 @@
+#include "framework.h"
+#include "GameMode.h"
+#include "World.h"
+#include "Abilities.h"
+#include "Player.h"
+#include "Bots.h"
+
+bool KickPlayer() {
+    std::cout << "KickPlayer" << std::endl;
+    return true;
+}
+
+static void (*ServerReplicateActors)(void*) = decltype(ServerReplicateActors)(__int64(GetModuleHandleW(0)) + 0x1023F60);
+
+void (*TickFlushOG)(UNetDriver* Driver);
+void TickFlushHook(UNetDriver* Driver)
+{
+    if (Driver && Driver->ReplicationDriver && Driver->ClientConnections.Num() > 0) {
+        ServerReplicateActors(Driver->ReplicationDriver);
+    }
+
+    if (GetAsyncKeyState(VK_INSERT)) {
+        StartAircraftPhase((AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode, 0);
+        Sleep(1000);
+    }
+
+    return TickFlushOG(Driver);
+}
+
+bool rettrue()
+{
+    return true;
+}
+
+void* (*DispatchRequestOG)(__int64, __int64, __int64);
+void* DispatchRequestHook(__int64 a1, __int64 a2, __int64 a3) {
+    return DispatchRequestOG(a1, a2, 3);
+}
+
+void (*PE_OG)(UObject*, UFunction* Function, void* Params);
+void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
+    
+    if (Object && Function) {
+        std::string FuncName = Function->GetName();
+        std::string ObjectClassName = Object->Class->GetName();
+
+        if (FuncName.contains("Ai") || FuncName.contains("Boss")) {
+            std::cout << "[Function]: " << FuncName << " [ObjectName]: " << ObjectClassName << std::endl;
+        }
+    }
+
+    return PE_OG(Object, Function, Params);
+}
+
+DWORD WINAPI Main(LPVOID)
+{
+    AllocConsole();
+    FILE* File;
+    freopen_s(&File, "CONOUT$", "w+", stdout);
+    SetConsoleTitleA("Reverse");
+    MH_Initialize();
+    Sleep(5000);
+    
+    
+
+    GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"open Apollo_Terrain", nullptr);
+
+    Hook(ImageBase + 0x4640A30, GameMode::ReadyToStartMatchHook, nullptr);
+    Hook(ImageBase + 0x45c9d90, GetNetMode, nullptr);
+    //Hook(ImageBase + 0x3eb6780, GetNetMode, nullptr);
+    //Hook(ImageBase + 0x1e23840, ChangeGameSessionId, nullptr);
+    Hook(ImageBase + 0x4155600, KickPlayer, nullptr);
+    Hook(ImageBase + 0x18F6250, GameMode::SpawnDefaultPawnFor, nullptr);
+    Hook(ImageBase + 0x42C3ED0, TickFlushHook, (void**)&TickFlushOG);
+    Hook(ImageBase + 0x108d740, DispatchRequestHook, (void**)&DispatchRequestOG);
+    Hook(ImageBase + 0x2e13bf0, PE_Hook, (void**)&PE_OG);
+    Hook(ImageBase + 0x19E9B10, SpawnBot, nullptr);
+
+    std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
+    std::vector<uint64_t> RetTrueFuncs = { ImageBase + 0x4155600, ImageBase + 0x2DBCBA0 };
+
+    for (auto& NullFunc : NullFuncs) PatchByte(NullFunc, 0xC3);
+    for (auto& RetTrue : RetTrueFuncs) Hook(RetTrue, rettrue, nullptr);
+
+    for (int i = 0; i < UObject::GObjects->Num(); i++) {
+        UObject* Object = UObject::GObjects->GetByIndex(i);
+
+        if (!Object) continue;
+
+        if (Object->IsA(UAbilitySystemComponent::StaticClass())) {
+            void** VFT = Object->VTable;
+
+            if (!VFT) continue;
+
+            DWORD Word;
+            VirtualProtect(VFT + 0xfa, 8, PAGE_EXECUTE_READWRITE, &Word);
+            VFT[0xfa] = Abilities::InternalServerTryActivateAbilityHook;
+            DWORD NEW;
+            VirtualProtect(VFT + 0xfa, 8, Word, &NEW);
+        }
+    }
+
+    
+    //ServerReadyToStartMatch_OG = decltype(ServerReadyToStartMatch_OG)(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x269]);
+    DWORD F;
+    VirtualProtect(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x10D], 8, PAGE_EXECUTE_READWRITE, &F);
+    AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x10D] = ServerAcknowledgePossesion;
+    DWORD a;
+    VirtualProtect(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x10D], 8, F, &a);
+
+    MH_EnableHook(MH_ALL_HOOKS);
+
+    uint64_t GIsClient = ImageBase + 0x804b659;
+    *(bool*)GIsClient = false;
+
+
+    DWORD d;
+    VirtualProtect(UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89], 8, PAGE_EXECUTE_READWRITE, &d);
+    UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89] = ServerAttemptAircraftJump;
+    DWORD s;
+    VirtualProtect(UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89], 8, d, &s);
+
+    DWORD g;
+    VirtualProtect(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x20D], 8, PAGE_EXECUTE_READWRITE, &g);
+    AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x20D] = ServerExecuteInventoryItem;
+    DWORD f;
+    VirtualProtect(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x20D], 8, g, &f);
+
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAIDebug VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAI VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAIDirector VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortQuest VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortTeams VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortLoot VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortPlaylistOptions VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortSettings VeryVerbose", nullptr);
+
+    return 0;
+}
+
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+                     )
+{
+    switch (ul_reason_for_call)
+    {
+    case DLL_PROCESS_ATTACH:
+        CreateThread(0, 0, Main, 0, 0, 0);
+        break;
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+    case DLL_PROCESS_DETACH:
+        break;
+    }
+    return TRUE;
+}
+
