@@ -25,6 +25,8 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		float TimeSeconds = UGameplayStatics::GetTimeSeconds(GetWorld());
 		float Duration = 120.f;
 
+
+
 		GameState->WarmupCountdownEndTime = TimeSeconds + Duration;
 		GameMode->WarmupCountdownDuration = Duration;
 		GameState->WarmupCountdownStartTime = TimeSeconds;
@@ -34,6 +36,19 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		GameMode->ServerBotManagerClass = UFortServerBotManagerAthena::StaticClass();
 		GameMode->ServerBotManager->CachedGameMode = GameMode;
 		GameMode->ServerBotManager->CachedGameState = GameState;
+
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaMutator_Bots::StaticClass(), &Actors);
+		for (AActor* Actor : Actors) {
+			static bool bFirst = false;
+			if (!bFirst) {
+				GameMode->ServerBotManager->CachedBotMutator = ((AFortAthenaMutator_Bots*)Actor);
+				bFirst = true;
+			}
+		}
+		if (!GameMode->ServerBotManager->CachedBotMutator) {
+			GameMode->ServerBotManager->CachedBotMutator = SpawnActor<AFortAthenaMutator_Bots>();
+		}
 
 		GameMode->AIDirector = SpawnActor<AFortAIDirector>();
 		if (GameMode->AIDirector) {
@@ -130,5 +145,7 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 		Inventory::GiveWorldItem(NewPlayer, Item.Item, Item.Count, 0);
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
+	
+
 	return GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
 }

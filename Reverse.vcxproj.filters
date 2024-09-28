@@ -83,6 +83,9 @@
     <ClCompile Include="Bots.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SDK\SDK\NavigationSystem_functions.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="minhook.lib">

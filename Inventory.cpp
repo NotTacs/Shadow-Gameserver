@@ -15,7 +15,5 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	PC->WorldInventory->HandleInventoryLocalUpdate();
 	PC->WorldInventory->Inventory.MarkItemDirty(WorldItem->ItemEntry);
 
-	std::cout << PC->WorldInventory->Inventory.ItemInstances.Num() << std::endl;
-
 	return WorldItem;
 }
