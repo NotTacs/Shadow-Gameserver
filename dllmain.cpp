@@ -43,6 +43,9 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
     if (Object && Function) {
         std::string FuncName = Function->GetName();
         std::string ObjectClassName = Object->Class->GetName();
+        if (FuncName.contains("OnDamageServer")) {
+            std::cout << "FuncName: " << Function->GetFullName() << std::endl;
+        }
     }
 
     return PE_OG(Object, Function, Params);
@@ -72,6 +75,7 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x108d740, DispatchRequestHook, (void**)&DispatchRequestOG);
     Hook(ImageBase + 0x2e13bf0, PE_Hook, (void**)&PE_OG);
     Hook(ImageBase + 0x19E9B10, SpawnBot, (void**)&SpawnBot_OG);
+    Hook(ImageBase + 0x2683f80, OnDamageServer, (void**)&OnDamageServer_OG);
 
     std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
     std::vector<uint64_t> RetTrueFuncs = { ImageBase + 0x4155600, ImageBase + 0x2DBCBA0 };
@@ -148,6 +152,8 @@ DWORD WINAPI Main(LPVOID)
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogClass VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogHttp VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogGameSession VeryVerbose", nullptr);
+
+
 
     return 0;
 }

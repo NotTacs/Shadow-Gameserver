@@ -3,5 +3,5 @@
 
 namespace Inventory
 {
-	UFortWorldItem* GiveWorldItem(AFortPlayerControllerAthena* PC,UFortItemDefinition* Definition, int Count, int Level);
+	UFortWorldItem* GiveWorldItem(AFortPlayerControllerAthena* PC,UFortItemDefinition* Definition, int Count, int Level, bool Stack = false);
 }

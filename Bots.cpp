@@ -117,7 +117,7 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 				UKismetStringLibrary::Conv_NameToString(Specialization.ObjectID.AssetPathName).ToString());
 		}
 
-		for (TSoftObjectPtr<UCustomCharacterPart> CharacterPart : Spec->CharacterParts) {
+		for (const TSoftObjectPtr<UCustomCharacterPart>& CharacterPart : Spec->CharacterParts) {
 			UCustomCharacterPart* CP = CharacterPart.Get();
 			if (!CP) {
 				std::string Part = UKismetStringLibrary::Conv_NameToString(CharacterPart.ObjectID.AssetPathName).ToString();

@@ -1,5 +1,7 @@
 #include "Player.h"
 #include "Bots.h"
+#include "SDK/SDK/FortniteGame_parameters.hpp"
+#include "Inventory.h"
 
 void ServerReadyToStartMatch(AFortPlayerController* Controller) {
 
@@ -45,4 +47,34 @@ void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGui
 	if (Definition->IsA(UFortWeaponItemDefinition::StaticClass())) {
 		Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 	}
+}
+
+
+void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGameplayTagContainer& DamageTags, const struct FVector& Momentum, const struct FHitResult& HitInfo, class AController* InstigatedBy, class AActor* DamageCauser, const struct FGameplayEffectContextHandle& EffectContext) {
+	printf("OnDamageServer");
+
+	std::cout << "Class: " << Object->Class->GetFullName() << std::endl; 
+
+	std::cout << "Class2: " << InstigatedBy->Class->GetFullName() << std::endl;
+
+	if (InstigatedBy->IsA(AFortPlayerControllerAthena::StaticClass()) && !Object->bIsPlayerBuildable) {
+		AFortPlayerControllerAthena* FortController = (AFortPlayerControllerAthena*)InstigatedBy;
+		UFortWeaponMeleeItemDefinition* PickaxeDef = FortController->CosmeticLoadoutPC.Pickaxe->WeaponDefinition;
+		auto A = (ABuildingSMActor*)Object;
+		if (FortController && FortController->MyFortPawn->CurrentWeapon && FortController->MyFortPawn->CurrentWeapon->WeaponData == PickaxeDef) {
+			float What = FindCurveTable(StaticFindObject<UCurveTable>("/Game/Athena/Balance/DataTables/AthenaResourceRates.AthenaResourceRates"), A->BuildingResourceAmountOverride.RowName);
+			std::cout << "What: " << What << std::endl;
+			float Vhat = A->GetMaxHealth() / Damage;
+
+			float sas = round(What / Vhat);
+
+			std::cout << "sas: " << sas << std::endl;
+
+			FortController->ClientReportDamagedResourceBuilding(A, A->ResourceType, sas, false, Damage == 100.0f);
+			printf("test");
+			Inventory::GiveWorldItem(FortController, UFortKismetLibrary::K2_GetResourceItemDefinition(A->ResourceType), sas, 0, true);
+		}
+	}
+
+	return OnDamageServer_OG(Object, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
 }

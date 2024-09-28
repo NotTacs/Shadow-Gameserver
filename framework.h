@@ -14,6 +14,15 @@ inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
 inline void (*Build)(UNavigationSystemV1* System) = decltype(Build)(ImageBase + 0x4804AA0);
 inline void (*StartAircraftPhase)(AFortGameModeAthena* GameMode, char a2) = decltype(StartAircraftPhase)(ImageBase + 0x18F9BB0);
 static UObject* (*StaticLoadObjectOG)(UClass* Class, UObject* InOuter, const TCHAR* Name, const TCHAR* Filename, uint32_t LoadFlags, UObject* Sandbox, bool bAllowObjectReconciliation, void*) = decltype(StaticLoadObjectOG)(__int64(GetModuleHandleW(0)) + 0x2E1CD60);
+static UObject* (*StaticFindObjectOG)(UClass*, UObject* Package, const wchar_t* OrigInName, bool ExactClass) = decltype(StaticFindObjectOG)(__int64(GetModuleHandleW(0)) + 0x2E1C4B0);
+
+template <typename T>
+static T* StaticFindObject(std::string ObjectName)
+{
+    auto NameWStr = std::wstring(ObjectName.begin(), ObjectName.end()).c_str();
+
+    return (T*)StaticFindObjectOG(T::StaticClass(), nullptr, NameWStr, false);
+}
 
 template<typename T>
 inline T* StaticLoadObject(std::string name)
@@ -114,4 +123,41 @@ inline FQuat ConvertRotToQuat(const FRotator& Rot) {
     RotationQuat.W = CR * CP * CY + SR * SP * SY;
 
     return RotationQuat;
+}
+
+inline void UFunctionHook(UFunction* Function, void* Detour, void** OG) {
+    if (!Function) {
+        printf("Invalid Pointer To Function");
+        return;
+    }
+
+    if (OG) {
+        *OG = Function->ExecFunction;
+    }
+
+    Function->ExecFunction = (UFunction::FNativeFuncPtr)Detour;
+}
+
+class FFrame {
+public:
+    uint8* GetLocals() {
+        return *(uint8**)(uintptr_t(this) + 0x40);
+    }
+    void Step(UObject& Context, void* const Z_ParamResult) {
+        void (*Step_OG)(__int64,UObject&, void* const) = decltype(Step_OG)(ImageBase + 0x2e1dd00);
+        Step_OG(__int64(this),Context, Z_ParamResult);
+    }
+};
+
+
+inline float FindCurveTable(UCurveTable* CurveTable, FName RowName) {
+    if (!CurveTable) printf("No CurveTable Now");
+    EEvaluateCurveTableResult Result;
+    float Out;
+    UDataTableFunctionLibrary::EvaluateCurveTableRow(CurveTable, RowName, 0.f, &Result, &Out, FString());
+    if (Result == EEvaluateCurveTableResult::RowNotFound) {
+        std::cout << "Very Proper" << std::endl;
+    }
+
+    return Out;
 }
