@@ -42,6 +42,9 @@
     <ClInclude Include="Bots.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Looting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -84,6 +87,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SDK\SDK\NavigationSystem_functions.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Looting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SDK\SDK\AIModule_functions.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

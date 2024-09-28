@@ -11,6 +11,7 @@ inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
 
 
+inline void (*Sub_16BDED0)(UNavigationSystemV1* System) = decltype(Sub_16BDED0)(ImageBase + 0x16BDED0);
 inline void (*Build)(UNavigationSystemV1* System) = decltype(Build)(ImageBase + 0x4804AA0);
 inline void (*StartAircraftPhase)(AFortGameModeAthena* GameMode, char a2) = decltype(StartAircraftPhase)(ImageBase + 0x18F9BB0);
 static UObject* (*StaticLoadObjectOG)(UClass* Class, UObject* InOuter, const TCHAR* Name, const TCHAR* Filename, uint32_t LoadFlags, UObject* Sandbox, bool bAllowObjectReconciliation, void*) = decltype(StaticLoadObjectOG)(__int64(GetModuleHandleW(0)) + 0x2E1CD60);
@@ -44,9 +45,9 @@ inline void Hook(uintptr_t Address, void* Hook, void** OG)
 }
 
 template<typename T>
-inline T* SpawnActor(FTransform Transform = {})
+inline T* SpawnActor(FTransform Transform = {}, AActor* Owner = nullptr)
 {
-    AActor* Start = UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, nullptr);
+    AActor* Start = UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, Owner);
     return (T*)UGameplayStatics::FinishSpawningActor(Start, Transform);
 }
 
@@ -160,4 +161,16 @@ inline float FindCurveTable(UCurveTable* CurveTable, FName RowName) {
     }
 
     return Out;
+}
+
+inline void VFTHook(void** VFT, int Index, void* Hook, void** OG) {
+
+    if (OG)
+        *OG = VFT[Index];
+
+    DWORD S;
+    VirtualProtect(VFT + Index, 8, PAGE_EXECUTE_READWRITE, &S);
+    VFT[Index] = Hook;
+    DWORD b;
+    VirtualProtect(VFT + Index, 8, S, &b);
 }

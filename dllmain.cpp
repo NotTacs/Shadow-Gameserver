@@ -32,6 +32,11 @@ bool rettrue()
     return true;
 }
 
+bool retfalse()
+{
+    return false;
+}
+
 void* (*DispatchRequestOG)(__int64, __int64, __int64);
 void* DispatchRequestHook(__int64 a1, __int64 a2, __int64 a3) {
     return DispatchRequestOG(a1, a2, 3);
@@ -43,7 +48,7 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
     if (Object && Function) {
         std::string FuncName = Function->GetName();
         std::string ObjectClassName = Object->Class->GetName();
-        if (FuncName.contains("OnDamageServer")) {
+        if (Object->Class == AFortPlayerControllerZone::StaticClass()) {
             std::cout << "FuncName: " << Function->GetFullName() << std::endl;
         }
     }
@@ -76,6 +81,7 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x2e13bf0, PE_Hook, (void**)&PE_OG);
     Hook(ImageBase + 0x19E9B10, SpawnBot, (void**)&SpawnBot_OG);
     Hook(ImageBase + 0x2683f80, OnDamageServer, (void**)&OnDamageServer_OG);
+    Hook(ImageBase + 0x29B5C80, ClientOnPawnDied, (void**)&ClientOnPawnDied_OG);
 
     std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
     std::vector<uint64_t> RetTrueFuncs = { ImageBase + 0x4155600, ImageBase + 0x2DBCBA0 };
@@ -114,6 +120,8 @@ DWORD WINAPI Main(LPVOID)
     uint64_t GIsClient = ImageBase + 0x804b659;
     *(bool*)GIsClient = false;
 
+    
+
     DWORD d;
     VirtualProtect(UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89], 8, PAGE_EXECUTE_READWRITE, &d);
     UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89] = ServerAttemptAircraftJump;
@@ -126,6 +134,14 @@ DWORD WINAPI Main(LPVOID)
     DWORD f;
     VirtualProtect(AFortPlayerControllerAthena::GetDefaultObj()->VTable[0x20D], 8, g, &f);
 
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x21D, ServerAttemptInventoryDrop, (void**)&ServerAttemptInventoryDrop_OG);
+
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x269, ServerReadyToStartMatch, (void**)&ServerReadyToStartMatch_OG);
+
+    //VFTHook(AFortGameModeAthena::GetDefaultObj()->VTable, 0xCE, GameMode::HandleStartingNewPlayer, (void**)GameMode::HandleStartingNewPlayer_OG);
+
+    VFTHook(UNavigationSystemV1::GetDefaultObj()->VTable, 0x5B, rettrue, nullptr);
+
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAIDebug VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAI VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAIDirector VeryVerbose", nullptr);
@@ -134,7 +150,6 @@ DWORD WINAPI Main(LPVOID)
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortLoot VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortPlaylistOptions VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortSettings VeryVerbose", nullptr);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"show nav", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFort VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortPlayerPawnAthena VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineTournament VeryVerbose", nullptr);
@@ -150,7 +165,7 @@ DWORD WINAPI Main(LPVOID)
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogTournamentManager VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogUnrealNames VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogClass VeryVerbose", nullptr);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogHttp VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogNavigationDataBuild VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogGameSession VeryVerbose", nullptr);
 
 

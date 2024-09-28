@@ -145,6 +145,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="GameMode.h" />
     <ClInclude Include="Inventory.h" />
+    <ClInclude Include="Looting.h" />
     <ClInclude Include="Minhook.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="SDK\SDK.hpp" />
@@ -156,7 +157,9 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GameMode.cpp" />
     <ClCompile Include="Inventory.cpp" />
+    <ClCompile Include="Looting.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SDK\SDK\AIModule_functions.cpp" />
     <ClCompile Include="SDK\SDK\Athena_PlayerController_functions.cpp" />
     <ClCompile Include="SDK\SDK\Basic.cpp" />
     <ClCompile Include="SDK\SDK\CoreUObject_functions.cpp" />

@@ -9,7 +9,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -145,7 +145,27 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 		Inventory::GiveWorldItem(NewPlayer, Item.Item, Item.Count, 0);
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
-	
 
-	return GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
+	std::cout << __int64(GetWorld()->NavigationSystem) << "\n";
+	std::cout << (GetWorld()->NavigationSystem ? __int64(((UNavigationSystemV1*)GetWorld()->NavigationSystem)->MainNavData) : 0) << "\n";
+
+	/* *((BYTE*)(GetWorld()->NavigationSystem + 920)) &= 0xFD;
+
+	Sub_16BDED0((UNavigationSystemV1*)GetWorld()->NavigationSystem);
+
+	*/
+
+	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
+
+	NewPlayer->GetQuestManager(GameMode->AssociatedSubGame)->InitializeQuestAbilities(Pawn);
+
+	return Pawn;
+}
+
+void GameMode::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* PC) {
+	
+	auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+
+	return HandleStartingNewPlayer_OG(GameMode, PC);
 }

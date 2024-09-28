@@ -1,18 +1,47 @@
 #include "Bots.h"
 #include <intrin.h>
-void DumpAllPatrolPathObjects()
+std::vector<AFortAthenaPatrolPath*> GetPatrolPaths()
 {
-	static std::ofstream Log("PatrolPath.log");
-	for (int i = 0; i < UObject::GObjects->Num(); i++) {
-		UObject* Object = UObject::GObjects->GetByIndex(i);
+	static std::vector<AFortAthenaPatrolPath*> PatrolPaths;
+	if (PatrolPaths.size() == 0) {
+		for (int i = 0; i < UObject::GObjects->Num(); i++) {
+			UObject* Object = UObject::GObjects->GetByIndex(i);
 
-		if (!Object) continue;
+			if (!Object) continue;
 
-		if (Object->IsA(AFortAthenaPatrolPath::StaticClass())) {
-			Log << "[PatrolPath]: " << Object->GetFullName() << std::endl;
+			if (Object->IsA(AFortAthenaPatrolPath::StaticClass())) {
+				PatrolPaths.push_back((AFortAthenaPatrolPath*)Object);
+			}
 		}
 	}
-	Log.close();
+	return PatrolPaths;
+}
+
+void GiveItem(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def, int count, int Level) {
+	UFortWorldItem* Item = (UFortWorldItem*)Def->CreateTemporaryItemInstanceBP(count, Level);
+	if (!Item) return;
+	if (Controller->Inventory) {
+		Item->OwnerInventory = Controller->Inventory;
+		Controller->Inventory->Inventory.ItemInstances.Add(Item);
+		Controller->Inventory->Inventory.ReplicatedEntries.Add(Item->ItemEntry);
+		Controller->Inventory->Inventory.MarkItemDirty(Item->ItemEntry);
+		Controller->Inventory->HandleInventoryLocalUpdate();
+	}
+	else {
+		return;
+	}
+
+	//Item->ItemEntry.LoadedAmmo = 0;
+}
+
+FGuid GetGuid(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def) {
+	for (int i = 0; i < Controller->Inventory->Inventory.ReplicatedEntries.Num(); i++) {
+		FFortItemEntry Entry = Controller->Inventory->Inventory.ReplicatedEntries[i];
+
+		if (Entry.ItemDefinition == Def) {
+			return Entry.ItemGuid;
+		}
+	}
 }
 
 class AllBots {
@@ -99,7 +128,9 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 		Controller->AIEvaluators.Add(PropagateAwareness);
 	}
 
-	std::cout <<  "Shit: " << Controller->AIEvaluators.Num() << std::endl;
+	if (Controller->Blackboard) {
+		
+	}
 
 	//Very Very HardCoded
 	Controller->CosmeticLoadoutBC.Character = InBotData->CharacterCustomization->CustomizationLoadout.Character;
@@ -126,6 +157,27 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 			Pawn->ServerChoosePart(CP->CharacterPartType, CP);
 		}
 	}
+
+	Controller->Inventory = SpawnActor<AFortInventory>({}, Controller);
+	Controller->Inventory->InventoryType = EFortInventoryType::World;
+	Controller->Inventory->Inventory = FFortItemList();
+	Controller->Inventory->Inventory.ReplicatedEntries = TArray<struct FFortItemEntry>();
+	Controller->Inventory->Inventory.ItemInstances = TArray<class UFortWorldItem*>();
+	Controller->Inventory->SetOwner(Controller);
+
+	if (InBotData->StartupInventory) {
+		for (int i = 0; i < InBotData->StartupInventory->Items.Num(); i++) {
+			UFortItemDefinition* Item = InBotData->StartupInventory->Items[i];
+			if (!Item) continue;
+			std::cout << "Item: " << Item->GetFullName() << "\n";
+			GiveItem(Controller, Item,1, 0);
+			FName MiscItem = UKismetStringLibrary::Conv_StringToName(L"Weapon.Meta.MiscWrapped");
+			if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GameplayTags.GameplayTags[0].TagName != MiscItem ) {
+				Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Item, GetGuid(Controller, Item));
+			}
+		}
+	}
+
 
 	//std::cout << Controller->BotPlayerName.ToString() << std::endl;
 	//GameMode->ChangeName(Controller, UKismetTextLibrary::Conv_TextToString(InBotData->BotNameSettings->OverrideName), true);

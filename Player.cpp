@@ -3,9 +3,25 @@
 #include "SDK/SDK/FortniteGame_parameters.hpp"
 #include "Inventory.h"
 
-void ServerReadyToStartMatch(AFortPlayerController* Controller) {
+void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	std::cout << "ServerReadyToStartMatch" << std::endl;
+
+	Controller->XPComponent->bRegisteredWithQuestManager = true;
+	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
+
+	std::cout << "Acolodes: " << Controller->XPComponent->PlayerAccolades.Num() << std::endl;
+
+	if (!Controller->MatchReport) {
+		std::cout << "Player has no Match Report" << std::endl;
+	}
+
+	if (Controller->IsPartyLeader()) {
+		std::cout << "Party Leader !!" << std::endl;
+	}
+
+	auto PS = (AFortPlayerStateAthena*)Controller->PlayerState;
+
 
 	return ServerReadyToStartMatch_OG(Controller);
 }
@@ -13,8 +29,6 @@ void ServerReadyToStartMatch(AFortPlayerController* Controller) {
 void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn) {
 
 	Controller->AcknowledgedPawn = Pawn;
-
-	DumpAllPatrolPathObjects();
 
 	std::cout << "ServerAcknowledgePosession" << std::endl;
 	static auto Set = StaticLoadObject<UFortAbilitySet>("/Game/Abilities/Player/Generic/Traits/DefaultPlayer/GAS_AthenaPlayer.GAS_AthenaPlayer");
@@ -45,36 +59,64 @@ void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGui
 	if (!Definition) return;
 
 	if (Definition->IsA(UFortWeaponItemDefinition::StaticClass())) {
+		if (!Controller->MyFortPawn) return;
 		Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 	}
 }
 
+void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash) {
+	printf("ServerAttemptInventoryDrop");
 
-void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGameplayTagContainer& DamageTags, const struct FVector& Momentum, const struct FHitResult& HitInfo, class AController* InstigatedBy, class AActor* DamageCauser, const struct FGameplayEffectContextHandle& EffectContext) {
-	printf("OnDamageServer");
+	Inventory::RemoveItem((AFortPlayerControllerAthena*)Controller, ItemGuid, Count);
 
-	std::cout << "Class: " << Object->Class->GetFullName() << std::endl; 
+	return ServerAttemptInventoryDrop_OG(Controller, ItemGuid, Count, bTrash);
+}
 
-	std::cout << "Class2: " << InstigatedBy->Class->GetFullName() << std::endl;
+void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport) {
+	AFortPlayerPawnAthena* KillerPawn = (AFortPlayerPawnAthena*)DeathReport.KillerPawn;
+	AFortPlayerStateAthena* KillerPlayerState = (AFortPlayerStateAthena*)DeathReport.KillerPlayerState;
+	AFortPlayerStateAthena* DeadPlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
+	printf("ClientOnPawnDied");
+	if (DeathReport.ServerTimeForRespawn == 0 || DeathReport.ServerTimeForResurrect == 0) {
+		printf("Player Will Not Respawn");
+		if (KillerPawn && KillerPlayerState && Controller && !DeadPlayerState->DeathInfo.bDBNO) {
+			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
+				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
 
-	if (InstigatedBy->IsA(AFortPlayerControllerAthena::StaticClass()) && !Object->bIsPlayerBuildable) {
-		AFortPlayerControllerAthena* FortController = (AFortPlayerControllerAthena*)InstigatedBy;
-		UFortWeaponMeleeItemDefinition* PickaxeDef = FortController->CosmeticLoadoutPC.Pickaxe->WeaponDefinition;
-		auto A = (ABuildingSMActor*)Object;
-		if (FortController && FortController->MyFortPawn->CurrentWeapon && FortController->MyFortPawn->CurrentWeapon->WeaponData == PickaxeDef) {
-			float What = FindCurveTable(StaticFindObject<UCurveTable>("/Game/Athena/Balance/DataTables/AthenaResourceRates.AthenaResourceRates"), A->BuildingResourceAmountOverride.RowName);
-			std::cout << "What: " << What << std::endl;
-			float Vhat = A->GetMaxHealth() / Damage;
-
-			float sas = round(What / Vhat);
-
-			std::cout << "sas: " << sas << std::endl;
-
-			FortController->ClientReportDamagedResourceBuilding(A, A->ResourceType, sas, false, Damage == 100.0f);
-			printf("test");
-			Inventory::GiveWorldItem(FortController, UFortKismetLibrary::K2_GetResourceItemDefinition(A->ResourceType), sas, 0, true);
+			}
 		}
 	}
+	else {
+		if (KillerPawn && KillerPlayerState && Controller && !DeadPlayerState->DeathInfo.bDBNO) {
+			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
+				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
+
+			}
+		}
+	}
+
+	return ClientOnPawnDied_OG(Controller, DeathReport);
+}
+
+void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGameplayTagContainer& DamageTags, const struct FVector& Momentum, const struct FHitResult& HitInfo, class AController* InstigatedBy, class AActor* DamageCauser, const struct FGameplayEffectContextHandle& EffectContext) {
+	if (!InstigatedBy || !Object) return OnDamageServer_OG(Object, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
+	if (Object->IsA(ABuildingSMActor::StaticClass())) {
+		if (InstigatedBy->IsA(AFortPlayerControllerAthena::StaticClass()) && !Object->bIsPlayerBuildable) {
+			AFortPlayerControllerAthena* FortController = (AFortPlayerControllerAthena*)InstigatedBy;
+			UFortWeaponMeleeItemDefinition* PickaxeDef = FortController->CosmeticLoadoutPC.Pickaxe->WeaponDefinition;
+			auto A = (ABuildingSMActor*)Object;
+			if (FortController && FortController->MyFortPawn->CurrentWeapon && FortController->MyFortPawn->CurrentWeapon->WeaponData == PickaxeDef) {
+				float What = FindCurveTable(StaticFindObject<UCurveTable>("/Game/Athena/Balance/DataTables/AthenaResourceRates.AthenaResourceRates"), A->BuildingResourceAmountOverride.RowName);
+				float Vhat = A->GetMaxHealth() / Damage;
+
+				float sas = round(What / Vhat);
+
+				FortController->ClientReportDamagedResourceBuilding(A, A->ResourceType, sas, false, Damage == 100.0f);
+				Inventory::GiveWorldItem(FortController, UFortKismetLibrary::K2_GetResourceItemDefinition(A->ResourceType), sas, 0, true);
+			}
+		}
+	}
+	
 
 	return OnDamageServer_OG(Object, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
 }
