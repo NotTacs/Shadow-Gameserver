@@ -142,6 +142,7 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	printf("SpawnDefaultPawnFor");
 	for (int i = 0; i < GameMode->StartingItems.Num(); i++) {
 		FItemAndCount Item = GameMode->StartingItems[i];
+		std::cout << "Item: " << Item.Item->GetFullName() << std::endl;
 		Inventory::GiveWorldItem(NewPlayer, Item.Item, Item.Count, 0);
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);

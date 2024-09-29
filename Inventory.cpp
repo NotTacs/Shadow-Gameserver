@@ -48,7 +48,7 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	return WorldItem;
 }
 
-void Inventory::RemoveItem(AFortPlayerControllerAthena* PC, FGuid ItemGuid, int Count) {
+void Inventory::RemoveItem(AFortPlayerControllerAthena* PC, FGuid ItemGuid, int Count, bool bSpawnPickup) {
 	UFortWorldItem* WorldItem = nullptr;
 	UFortItemDefinition* ItemDefinition = nullptr;
 	bool bWipeInstance = false;
@@ -90,13 +90,14 @@ void Inventory::RemoveItem(AFortPlayerControllerAthena* PC, FGuid ItemGuid, int 
 			UFortWorldItem* ItemInstance = PC->WorldInventory->Inventory.ItemInstances[c];
 			if (ItemInstance->ItemEntry.ItemGuid == RE->ItemGuid) {
 				PC->WorldInventory->Inventory.ItemInstances.Remove(c);
-				SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, 
-					PC->MyFortPawn->K2_GetActorLocation(), 
-					C == 0 ? ItemInstance->ItemEntry.Count : C , 
-					EFortPickupSourceTypeFlag::Player, 
-					EFortPickupSpawnSource::Unset, 
-					PC->MyFortPawn);
-
+				if (bSpawnPickup) {
+					SpawnPickup(ItemInstance->ItemEntry.ItemDefinition,
+						PC->MyFortPawn->K2_GetActorLocation(),
+						C == 0 ? ItemInstance->ItemEntry.Count : C,
+						EFortPickupSourceTypeFlag::Player,
+						EFortPickupSpawnSource::Unset,
+						PC->MyFortPawn);
+				}
 				break;
 			}
 		}
@@ -141,4 +142,10 @@ AFortPickupAthena* Inventory::SpawnPickup(UFortItemDefinition* Definition, FVect
 	NewPickup->TossPickup(Loc, Pawn, -1, true, false, SourceTypeFlag, SpawnSource);
 
 	return NewPickup;
+}
+
+FGuid Inventory::GetGuid(AFortPlayerControllerAthena* PC, UFortItemDefinition* Def) {
+	for (UFortWorldItem* Item : PC->WorldInventory->Inventory.ItemInstances) {
+		if (Item->ItemEntry.ItemDefinition == Def) return Item->ItemEntry.ItemGuid;
+	}
 }

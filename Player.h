@@ -19,3 +19,9 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 
 inline void (*OnDamageServer_OG)(ABuildingSMActor* Object, float Damage, const struct FGameplayTagContainer& DamageTags, const struct FVector& Momentum, const struct FHitResult& HitInfo, class AController* InstigatedBy, class AActor* DamageCauser, const struct FGameplayEffectContextHandle& EffectContext);
 void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGameplayTagContainer& DamageTags, const struct FVector& Momentum, const struct FHitResult& HitInfo, class AController* InstigatedBy, class AActor* DamageCauser, const struct FGameplayEffectContextHandle& EffectContext);
+
+inline void (*ServerCreateBuildingActor_OG)(AFortPlayerControllerAthena* Controller, const struct FCreateBuildingActorData& CreateBuildingData);
+void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const struct FCreateBuildingActorData& CreateBuildingData);
+
+inline void (*ServerBeginEditingBuildingActor_OG)(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit);
+void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit);

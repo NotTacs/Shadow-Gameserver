@@ -45,9 +45,9 @@ inline void Hook(uintptr_t Address, void* Hook, void** OG)
 }
 
 template<typename T>
-inline T* SpawnActor(FTransform Transform = {}, AActor* Owner = nullptr)
+inline T* SpawnActor(FTransform Transform = {}, AActor* Owner = nullptr, UClass* OverrideClass = T::StaticClass())
 {
-    AActor* Start = UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), T::StaticClass(), Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, Owner);
+    AActor* Start = UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), OverrideClass, Transform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, Owner);
     return (T*)UGameplayStatics::FinishSpawningActor(Start, Transform);
 }
 

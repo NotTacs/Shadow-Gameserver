@@ -120,3 +120,44 @@ void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGamepl
 
 	return OnDamageServer_OG(Object, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
 }
+
+void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const struct FCreateBuildingActorData& CreateBuildingData) {
+
+	if (Controller->BroadcastRemoteClientInfo->RemoteBuildableClass && Controller) {
+		FTransform Transform{};
+		Transform.Translation = CreateBuildingData.BuildLoc;
+		Transform.Rotation = ConvertRotToQuat(CreateBuildingData.BuildRot);
+		Transform.Scale3D = FVector(1, 1, 1);
+		ABuildingSMActor* Building = SpawnActor<ABuildingSMActor>(Transform, Controller, Controller->BroadcastRemoteClientInfo->RemoteBuildableClass);
+		Building->bIsPlayerBuildable = true;
+		Building->InitializeKismetSpawnedBuildingActor(Building, Controller, true);
+		Building->TeamIndex = ((AFortPlayerStateAthena*)Controller->PlayerState)->TeamIndex;
+		Building->Team = EFortTeam(Building->TeamIndex);
+
+		Inventory::RemoveItem(Controller,
+			Inventory::GetGuid(Controller, UFortKismetLibrary::K2_GetResourceItemDefinition(Building->ResourceType)),
+			10);
+	}
+
+	return ServerCreateBuildingActor_OG(Controller, CreateBuildingData);
+}
+
+void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit) {
+	if (!Controller) {
+		return;
+	}
+	FGuid Guid;
+	UFortItemDefinition* ItemDefinition = nullptr;
+
+	for (FFortItemEntry Entry : Controller->WorldInventory->Inventory.ReplicatedEntries) {
+		if (Entry.ItemDefinition->IsA(UFortEditToolItemDefinition::StaticClass())) {
+			Guid = Entry.ItemGuid;
+			ItemDefinition = Entry.ItemDefinition;
+			break;
+		}
+	}
+
+	if (Controller->MyFortPawn && ItemDefinition) {
+		Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)ItemDefinition, Guid);
+	}
+}
