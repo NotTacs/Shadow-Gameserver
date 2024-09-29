@@ -146,18 +146,58 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 	if (!Controller) {
 		return;
 	}
+	if (!BuildingActorToEdit) {
+		printf("No building Actor");
+		return;
+	}
 	FGuid Guid;
 	UFortItemDefinition* ItemDefinition = nullptr;
+	FFortItemEntry* EditToolEntry = nullptr;
 
 	for (FFortItemEntry Entry : Controller->WorldInventory->Inventory.ReplicatedEntries) {
 		if (Entry.ItemDefinition->IsA(UFortEditToolItemDefinition::StaticClass())) {
-			Guid = Entry.ItemGuid;
-			ItemDefinition = Entry.ItemDefinition;
+			EditToolEntry = &Entry;
 			break;
 		}
 	}
 
-	if (Controller->MyFortPawn && ItemDefinition) {
-		Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)ItemDefinition, Guid);
+	ItemDefinition = EditToolEntry->ItemDefinition;
+
+	if (BuildingActorToEdit) {
+		((AFortWeap_EditingTool*)ItemDefinition)->EditActor = BuildingActorToEdit;
+		((AFortWeap_EditingTool*)ItemDefinition)->OnRep_EditActor();
 	}
+
+	Controller->ServerExecuteInventoryItem(EditToolEntry->ItemGuid);
+}
+
+ABuildingSMActor* (*ReplaceBuildingActor)(ABuildingSMActor* Actor, unsigned int a2, UObject* a3, unsigned int a4, int a5, bool, AFortPlayerControllerAthena*) = decltype(ReplaceBuildingActor)(ImageBase + 0x1b951b0);
+
+void ServerEditBuildingActor(AFortPlayerControllerAthena* Controller, class ABuildingSMActor* BuildingActorToEdit, TSubclassOf<class ABuildingSMActor> NewBuildingClass, uint8 RotationIterations, bool bMirrored) {
+	printf("ServerEditBuildingActor");
+	
+	if (!BuildingActorToEdit || !NewBuildingClass || !Controller) return;
+
+	BuildingActorToEdit->SetNetDormancy(ENetDormancy::DORM_DormantAll);
+	BuildingActorToEdit->EditingPlayer = nullptr;
+
+	ABuildingSMActor* BuildingActor = ReplaceBuildingActor(BuildingActorToEdit, 1, NewBuildingClass, BuildingActorToEdit->CurrentBuildingLevel, RotationIterations, bMirrored, Controller);
+
+	if (BuildingActor)
+		BuildingActor->bPlayerPlaced = true;
+}
+
+void ServerEndEditingBuildingActor(AFortPlayerControllerAthena* PC, ABuildingSMActor* ActorToStopEditing) {
+	if (!PC || !PC->MyFortPawn || !ActorToStopEditing)
+		return;
+	ActorToStopEditing->SetNetDormancy(ENetDormancy::DORM_DormantAll);
+	ActorToStopEditing->EditingPlayer = nullptr;
+
+	AFortWeap_EditingTool* EditTool = (AFortWeap_EditingTool*)PC->MyFortPawn->CurrentWeapon;
+
+	if (!EditTool)
+		return;
+	/*
+	EditTool->EditActor = nullptr;
+	EditTool->OnRep_EditActor(); */
 }

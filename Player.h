@@ -25,3 +25,7 @@ void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const st
 
 inline void (*ServerBeginEditingBuildingActor_OG)(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit);
 void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit);
+
+void ServerEditBuildingActor(AFortPlayerControllerAthena* Controller, class ABuildingSMActor* BuildingActorToEdit, TSubclassOf<class ABuildingSMActor> NewBuildingClass, uint8 RotationIterations, bool bMirrored);
+
+void ServerEndEditingBuildingActor(AFortPlayerControllerAthena* PC, ABuildingSMActor* ActorToStopEditing);

@@ -51,7 +51,8 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
         if (Object->Class == AFortPlayerControllerZone::StaticClass()) {
             std::cout << "FuncName: " << Function->GetFullName() << std::endl;
         }
-        if (FuncName.contains("ServerBeginEditingBuildingActor")) {
+        if (FuncName.contains("Editing")) {
+            std::cout << "FuncName: " << Function->GetFullName() << std::endl;
         }
     }
 
@@ -147,6 +148,10 @@ DWORD WINAPI Main(LPVOID)
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x230, ServerCreateBuildingActor, (void**)&ServerCreateBuildingActor_OG);
 
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x237, ServerBeginEditingBuildingActor, (void**)&ServerBeginEditingBuildingActor_OG);
+
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x232, ServerEditBuildingActor, nullptr);
+
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x235, ServerEndEditingBuildingActor, nullptr);
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAIDebug VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortAI VeryVerbose", nullptr);
