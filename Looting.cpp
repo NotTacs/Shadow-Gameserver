@@ -98,9 +98,6 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 		auto LootPackage = AllLootPackageData.at(Index);
 
 		if (LootPackage->LootPackageCall.ToString().empty() && LootPackage->Weight != 0) {
-			std::cout <<
-				UKismetStringLibrary::Conv_NameToString(LootPackage->ItemDefinition.ObjectID.AssetPathName).ToString() << std::endl;
-			UFortItemDefinition* ItemDef = StaticLoadObject<UFortItemDefinition>(UKismetStringLibrary::Conv_NameToString(LootPackage->ItemDefinition.ObjectID.AssetPathName).ToString());
 			LootPackageCalls.push_back(LootPackage);
 		}
 		else {
@@ -108,8 +105,6 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 				FFortLootPackageData* LootPackageData = (FFortLootPackageData*)Map.Second;
 
 				if (LootPackageData->LootPackageID.ToString() == LootPackage->LootPackageCall.ToString() && LootPackageData->Weight != 0) {
-					std::cout << UKismetStringLibrary::Conv_NameToString(LootPackageData->ItemDefinition.ObjectID.AssetPathName).ToString() << std::endl;
-
 					LootPackageCalls.push_back(LootPackageData);
 				}
 			}

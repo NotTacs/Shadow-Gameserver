@@ -169,12 +169,13 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
 
 	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
-	NewPlayer->GetQuestManager(GameMode->AssociatedSubGame)->InitializeQuestAbilities(Pawn);
-	
-	auto Sub = unsigned char(GameMode->AssociatedSubGame);
-	InitQuests(QuestManager, Sub, 0);
 
 	QuestManager->EnableQuestStateLogging();
+
+	for (UFortAccoladeItem* Item : QuestManager->CurrentAccolades) {
+		std::cout << "Item: " << Item->GetFullName() << std::endl;
+	}
+
 	return Pawn;
 }
 
