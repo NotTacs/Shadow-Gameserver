@@ -2,10 +2,81 @@
 #include "Bots.h"
 #include "SDK/SDK/FortniteGame_parameters.hpp"
 #include "Inventory.h"
+#include "Looting.h"
 
 void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	std::cout << "ServerReadyToStartMatch" << std::endl;
+
+	static bool bFirst = false;
+	if (!bFirst) {
+		FName Rizz = UKismetStringLibrary::Conv_StringToName(L"Loot_AthenaFloorLoot");
+		auto RizzV2 = GetItems(Rizz);
+
+		std::cout << "RizzV3: " << RizzV2.size() << std::endl;
+
+		TArray<AActor*> Actors;
+		TArray<AActor*> ActorsAgain;
+		UClass* Tiered_Athena_FloorLoot_Warmup = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
+		UClass* Tiered_Athena_FloorLoot = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C");
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot_Warmup, &Actors);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot, &ActorsAgain);
+
+		for (int i = 0; i < Actors.Num(); i++) {
+			auto Container = (ABuildingContainer*)Actors[i];
+			auto TierGroup = GetItems(Container->SearchLootTierGroup);
+			for (auto& Item : TierGroup) {
+				Inventory::SpawnPickup(Item.ItemDefinition, Container->K2_GetActorLocation(), Item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+
+				auto T = (UFortWeaponRangedItemDefinition*)Item.ItemDefinition;
+
+				if (((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
+					auto AmmoDef = ((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP();
+
+					Inventory::SpawnPickup(((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP(), Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+				}
+			}
+			Container->K2_DestroyActor();
+		}
+
+		for (int i = 0; i < ActorsAgain.Num(); i++) {
+			auto Container = (ABuildingContainer*)ActorsAgain[i];
+			auto TierGroup = GetItems(Container->SearchLootTierGroup);
+			for (auto& Item : TierGroup) {
+				Inventory::SpawnPickup(Item.ItemDefinition, Container->K2_GetActorLocation(), Item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+				auto T = (UFortWeaponRangedItemDefinition*)Item.ItemDefinition;
+
+				if (((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
+					auto AmmoDef = ((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP();
+					
+					Inventory::SpawnPickup(((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP(), Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+				}
+			}
+			Container->K2_DestroyActor();
+		}
+		bFirst = true;
+	}
+
+	auto PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+
+	std::cout << "GameMemberArray: " << GameState->GameMemberInfoArray.Members.Num() << std::endl;
+
+	FGameMemberInfo MemberInfo{};
+	MemberInfo.MostRecentArrayReplicationKey = -1;
+	MemberInfo.ReplicationID = -1;
+	MemberInfo.ReplicationKey = -1;
+	MemberInfo.MemberUniqueId = PlayerState->UniqueId;
+	MemberInfo.TeamIndex = PlayerState->TeamIndex;
+	MemberInfo.SquadId = PlayerState->SquadId;
+
+	GameState->GameMemberInfoArray.Members.Add(MemberInfo);
+	GameState->GameMemberInfoArray.MarkItemDirty(MemberInfo);
+
+	std::cout << "GameMembersNow: " << GameState->GameMemberInfoArray.Members.Num() << std::endl;
+
+	Sleep(2000);
+
 
 	Controller->XPComponent->bRegisteredWithQuestManager = true;
 	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
@@ -164,8 +235,9 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 	ItemDefinition = EditToolEntry->ItemDefinition;
 
 	if (BuildingActorToEdit) {
+		/*
 		((AFortWeap_EditingTool*)ItemDefinition)->EditActor = BuildingActorToEdit;
-		((AFortWeap_EditingTool*)ItemDefinition)->OnRep_EditActor();
+		((AFortWeap_EditingTool*)ItemDefinition)->OnRep_EditActor(); */
 	}
 
 	Controller->ServerExecuteInventoryItem(EditToolEntry->ItemGuid);

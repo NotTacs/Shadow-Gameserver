@@ -1,5 +1,6 @@
 #include "GameMode.h"
 #include "Inventory.h"
+#include "Looting.h"
 
 bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 {
@@ -25,40 +26,45 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		float TimeSeconds = UGameplayStatics::GetTimeSeconds(GetWorld());
 		float Duration = 120.f;
 
-
+		GameState->bGameModeWillSkipAircraft = Playlist->bSkipAircraft;
+		
 
 		GameState->WarmupCountdownEndTime = TimeSeconds + Duration;
 		GameMode->WarmupCountdownDuration = Duration;
 		GameState->WarmupCountdownStartTime = TimeSeconds;
 		GameMode->WarmupEarlyCountdownDuration = Duration;
 
-		GameMode->ServerBotManager = (UFortServerBotManagerAthena*)UGameplayStatics::SpawnObject(UFortServerBotManagerAthena::StaticClass(), GameMode);
-		GameMode->ServerBotManagerClass = UFortServerBotManagerAthena::StaticClass();
-		GameMode->ServerBotManager->CachedGameMode = GameMode;
-		GameMode->ServerBotManager->CachedGameState = GameState;
+		if (Playlist->bIsDefaultPlaylist) {
+			GameMode->ServerBotManager = (UFortServerBotManagerAthena*)UGameplayStatics::SpawnObject(UFortServerBotManagerAthena::StaticClass(), GameMode);
+			GameMode->ServerBotManagerClass = UFortServerBotManagerAthena::StaticClass();
+			GameMode->ServerBotManager->CachedGameMode = GameMode;
+			GameMode->ServerBotManager->CachedGameState = GameState;
 
-		TArray<AActor*> Actors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaMutator_Bots::StaticClass(), &Actors);
-		for (AActor* Actor : Actors) {
-			static bool bFirst = false;
-			if (!bFirst) {
-				GameMode->ServerBotManager->CachedBotMutator = ((AFortAthenaMutator_Bots*)Actor);
-				bFirst = true;
+			TArray<AActor*> Actors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaMutator_Bots::StaticClass(), &Actors);
+			for (AActor* Actor : Actors) {
+				static bool bFirst = false;
+				if (!bFirst) {
+					GameMode->ServerBotManager->CachedBotMutator = ((AFortAthenaMutator_Bots*)Actor);
+					bFirst = true;
+				}
+			}
+			if (!GameMode->ServerBotManager->CachedBotMutator) {
+				GameMode->ServerBotManager->CachedBotMutator = SpawnActor<AFortAthenaMutator_Bots>();
+			}
+
+			GameMode->AIDirector = SpawnActor<AFortAIDirector>();
+			if (GameMode->AIDirector) {
+				GameMode->AIDirector->Activate();
+			}
+			GameMode->AIGoalManager = SpawnActor<AFortAIGoalManager>();
+
+			if (Playlist->AISettings) {
+				GameMode->AISettings = Playlist->AISettings;
 			}
 		}
-		if (!GameMode->ServerBotManager->CachedBotMutator) {
-			GameMode->ServerBotManager->CachedBotMutator = SpawnActor<AFortAthenaMutator_Bots>();
-		}
 
-		GameMode->AIDirector = SpawnActor<AFortAIDirector>();
-		if (GameMode->AIDirector) {
-			GameMode->AIDirector->Activate();
-		}
-		GameMode->AIGoalManager = SpawnActor<AFortAIGoalManager>();
-
-		if (Playlist->AISettings) {
-			GameMode->AISettings = Playlist->AISettings;
-		}
+		
 
 		bPlaylist = true;
 	}
@@ -75,6 +81,8 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		bWait = true;
 	}
 
+	if (!GameState->MapInfo) return false;
+
 	static bool bListening = false;
 	if (!bListening) {
 		FName GameNetDriver = UKismetStringLibrary::Conv_StringToName(TEXT("GameNetDriver"));
@@ -89,6 +97,8 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 		bool (*InitListen)(UNetDriver*, UWorld*, FURL&, bool, FString&) = decltype(InitListen)(ImageBase + 0xD44C40);
 		void (*SetWorld)(UNetDriver*, UWorld*) = decltype(SetWorld)(ImageBase + 0x42C2B20);
+
+		GameState->OnRep_CurrentPlaylistInfo();
 
 		InitListen(Driver, GetWorld(), URL, false, Error);
 		SetWorld(Driver, GetWorld());
@@ -116,7 +126,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		}
 		GameState->OnFinishedShowingAdditionalPlaylistLevel();
 		GameState->OnRep_AdditionalPlaylistLevelsStreamed(); 
-		GameState->OnRep_CurrentPlaylistInfo();
+
 		GameState->OnRep_CurrentPlaylistId();
 		SetConsoleTitleA("Listening");
 
@@ -158,8 +168,13 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
 
+	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
 	NewPlayer->GetQuestManager(GameMode->AssociatedSubGame)->InitializeQuestAbilities(Pawn);
+	
+	auto Sub = unsigned char(GameMode->AssociatedSubGame);
+	InitQuests(QuestManager, Sub, 0);
 
+	QuestManager->EnableQuestStateLogging();
 	return Pawn;
 }
 

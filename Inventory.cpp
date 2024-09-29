@@ -127,6 +127,8 @@ void Inventory::RemoveItem(AFortPlayerControllerAthena* PC, FGuid ItemGuid, int 
 }
 
 AFortPickupAthena* Inventory::SpawnPickup(UFortItemDefinition* Definition, FVector Loc, int Count, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, AFortPlayerPawn* Pawn) {
+	
+	if (!Definition) return nullptr;
 	FTransform Transform{};
 	Transform.Translation = Loc;
 	Transform.Rotation = {};
