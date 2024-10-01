@@ -73,11 +73,7 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 		}
 	}
 
-	std::cout << "LootData: " << AllLootTierData.size() << std::endl;
-
 	FFortLootTierData* ChosenLootTierData = GetChosenLootTierData(AllLootTierData);
-
-	std::cout << "LootPackage: " << ChosenLootTierData->LootPackage.ToString() << std::endl;
 
 	std::vector<FFortLootPackageData*> AllLootPackageData;
 	for (TPair<FName, uint8*> Map : PDataTable->RowMap) {
@@ -87,8 +83,6 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 			AllLootPackageData.push_back(LootPackageData);
 		}
 	}
-
-	std::cout << "LootPackageNum: " << AllLootPackageData.size() << std::endl;
 
 	std::vector<FFortLootPackageData*> LootPackageCalls;
 

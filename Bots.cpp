@@ -41,6 +41,9 @@ FGuid GetGuid(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def) 
 		if (Entry.ItemDefinition == Def) {
 			return Entry.ItemGuid;
 		}
+		else {
+			continue;
+		}
 	}
 }
 

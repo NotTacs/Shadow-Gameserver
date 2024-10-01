@@ -5,7 +5,6 @@
 #include "SDK/SDK.hpp"
 using namespace SDK;
 #include "Minhook.h"
-#pragma(lib, "minhook.lib")
 
 inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);

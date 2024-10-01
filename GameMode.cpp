@@ -126,6 +126,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		}
 		GameState->OnFinishedShowingAdditionalPlaylistLevel();
 		GameState->OnRep_AdditionalPlaylistLevelsStreamed(); 
+		GameMode->HandleAllPlaylistLevelsVisible();
 
 		GameState->OnRep_CurrentPlaylistId();
 		SetConsoleTitleA("Listening");
@@ -185,4 +186,16 @@ void GameMode::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlaye
 	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
 
 	return HandleStartingNewPlayer_OG(GameMode, PC);
+}
+
+int Teams = 0;
+EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferred, AFortPlayerControllerAthena* PC) {
+	
+	UFortPlaylistAthena* Playlist = CurrentPlaylist();
+	if (Teams >= 100) {
+		PC->ClientReturnToMainMenu(L"Game Is Full");
+	}
+	auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
+
+	return EFortTeam(3);
 }

@@ -148,6 +148,9 @@ AFortPickupAthena* Inventory::SpawnPickup(UFortItemDefinition* Definition, FVect
 
 FGuid Inventory::GetGuid(AFortPlayerControllerAthena* PC, UFortItemDefinition* Def) {
 	for (UFortWorldItem* Item : PC->WorldInventory->Inventory.ItemInstances) {
-		if (Item->ItemEntry.ItemDefinition == Def) return Item->ItemEntry.ItemGuid;
+		if (Item->ItemEntry.ItemDefinition == Def) {
+			return Item->ItemEntry.ItemGuid;
+		}
+		else continue;
 	}
 }

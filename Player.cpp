@@ -7,18 +7,14 @@
 void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	std::cout << "ServerReadyToStartMatch" << std::endl;
+	auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 
 	static bool bFirst = false;
 	if (!bFirst) {
-		FName Rizz = UKismetStringLibrary::Conv_StringToName(L"Loot_AthenaFloorLoot");
-		auto RizzV2 = GetItems(Rizz);
-
-		std::cout << "RizzV3: " << RizzV2.size() << std::endl;
-
 		TArray<AActor*> Actors;
 		TArray<AActor*> ActorsAgain;
-		UClass* Tiered_Athena_FloorLoot_Warmup = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
-		UClass* Tiered_Athena_FloorLoot = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C");
+		static UClass* Tiered_Athena_FloorLoot_Warmup = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
+		static UClass* Tiered_Athena_FloorLoot = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C");
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot_Warmup, &Actors);
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot, &ActorsAgain);
 
@@ -54,6 +50,10 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 			}
 			Container->K2_DestroyActor();
 		}
+
+		Actors.Free();
+		ActorsAgain.Free();
+
 		bFirst = true;
 	}
 
@@ -77,6 +77,7 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	Sleep(2000);
 
+	std::cout << GameMode->NumTeams << std::endl;
 
 	Controller->XPComponent->bRegisteredWithQuestManager = true;
 	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
@@ -92,7 +93,6 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	}
 
 	auto PS = (AFortPlayerStateAthena*)Controller->PlayerState;
-
 
 	return ServerReadyToStartMatch_OG(Controller);
 }
@@ -129,10 +129,7 @@ void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGui
 
 	if (!Definition) return;
 
-	if (Definition->IsA(UFortWeaponItemDefinition::StaticClass())) {
-		if (!Controller->MyFortPawn) return;
-		Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
-	}
+	Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash) {
@@ -192,22 +189,37 @@ void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGamepl
 	return OnDamageServer_OG(Object, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
 }
 
+__int64 (*CantBuild)(UWorld*, UClass*, FVector, FRotator, bool, TArray<ABuildingSMActor*>*, char*) = decltype(CantBuild)(ImageBase + 0x1e57790);
+
 void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const struct FCreateBuildingActorData& CreateBuildingData) {
 
-	if (Controller->BroadcastRemoteClientInfo->RemoteBuildableClass && Controller) {
-		FTransform Transform{};
-		Transform.Translation = CreateBuildingData.BuildLoc;
-		Transform.Rotation = ConvertRotToQuat(CreateBuildingData.BuildRot);
-		Transform.Scale3D = FVector(1, 1, 1);
-		ABuildingSMActor* Building = SpawnActor<ABuildingSMActor>(Transform, Controller, Controller->BroadcastRemoteClientInfo->RemoteBuildableClass);
-		Building->bIsPlayerBuildable = true;
-		Building->InitializeKismetSpawnedBuildingActor(Building, Controller, true);
-		Building->TeamIndex = ((AFortPlayerStateAthena*)Controller->PlayerState)->TeamIndex;
-		Building->Team = EFortTeam(Building->TeamIndex);
 
-		Inventory::RemoveItem(Controller,
-			Inventory::GetGuid(Controller, UFortKismetLibrary::K2_GetResourceItemDefinition(Building->ResourceType)),
-			10);
+
+	if (Controller->BroadcastRemoteClientInfo->RemoteBuildableClass && Controller) {
+		TArray<ABuildingSMActor*> ActorsToRemove;
+		char a7;
+		if (!CantBuild(GetWorld(), Controller->BroadcastRemoteClientInfo->RemoteBuildableClass.Get(), CreateBuildingData.BuildLoc, CreateBuildingData.BuildRot, CreateBuildingData.bMirrored, &ActorsToRemove, &a7)) {
+			FTransform Transform{};
+			Transform.Translation = CreateBuildingData.BuildLoc;
+			Transform.Rotation = ConvertRotToQuat(CreateBuildingData.BuildRot);
+			Transform.Scale3D = FVector(1, 1, 1);
+			std::cout << "BuildingClass: " << Controller->BroadcastRemoteClientInfo->RemoteBuildableClass.Get()->GetFullName() << "\n";
+			ABuildingSMActor* Building = SpawnActor<ABuildingSMActor>(Transform, Controller, Controller->BroadcastRemoteClientInfo->RemoteBuildableClass.Get());
+			Building->bPlayerPlaced = true;
+			Building->SetMirrored(CreateBuildingData.bMirrored);
+			Building->InitializeKismetSpawnedBuildingActor(Building, Controller, true);
+			Building->TeamIndex = ((AFortPlayerStateAthena*)Controller->PlayerState)->TeamIndex;
+			Building->Team = EFortTeam(Building->TeamIndex);
+
+			for (int i = 0; i < ActorsToRemove.Num(); i++) {
+				ActorsToRemove[i]->K2_DestroyActor();
+			}
+			ActorsToRemove.Free();
+
+			Inventory::RemoveItem(Controller,
+				Inventory::GetGuid(Controller, UFortKismetLibrary::K2_GetResourceItemDefinition(Building->ResourceType)),
+				10);
+		}
 	}
 
 	return ServerCreateBuildingActor_OG(Controller, CreateBuildingData);
@@ -221,26 +233,34 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 		printf("No building Actor");
 		return;
 	}
-	FGuid Guid;
-	UFortItemDefinition* ItemDefinition = nullptr;
-	FFortItemEntry* EditToolEntry = nullptr;
 
-	for (FFortItemEntry Entry : Controller->WorldInventory->Inventory.ReplicatedEntries) {
+	std::cout << "BuildingActorToEdit: " << BuildingActorToEdit->GetFullName() << std::endl;
+
+	AFortWeap_EditingTool* ItemDefinition = nullptr;
+	FFortItemEntry EditToolEntry;
+
+	for (const FFortItemEntry& Entry : Controller->WorldInventory->Inventory.ReplicatedEntries) {
 		if (Entry.ItemDefinition->IsA(UFortEditToolItemDefinition::StaticClass())) {
-			EditToolEntry = &Entry;
+			EditToolEntry = Entry;
 			break;
 		}
 	}
 
-	ItemDefinition = EditToolEntry->ItemDefinition;
+	ItemDefinition = (AFortWeap_EditingTool*)EditToolEntry.ItemDefinition;
 
-	if (BuildingActorToEdit) {
-		/*
-		((AFortWeap_EditingTool*)ItemDefinition)->EditActor = BuildingActorToEdit;
-		((AFortWeap_EditingTool*)ItemDefinition)->OnRep_EditActor(); */
+
+
+	if (ItemDefinition) {
+		ItemDefinition->EditActor = BuildingActorToEdit;
+		printf("Setting Edit Actor");
+		ItemDefinition->OnRep_EditActor();
 	}
+	BuildingActorToEdit->EditingPlayer = (AFortPlayerStateAthena*)Controller->PlayerState;
+	BuildingActorToEdit->OnRep_EditingPlayer();
 
-	Controller->ServerExecuteInventoryItem(EditToolEntry->ItemGuid);
+	printf("Rizz");
+
+	Controller->ServerExecuteInventoryItem(EditToolEntry.ItemGuid);
 }
 
 ABuildingSMActor* (*ReplaceBuildingActor)(ABuildingSMActor* Actor, unsigned int a2, UObject* a3, unsigned int a4, int a5, bool, AFortPlayerControllerAthena*) = decltype(ReplaceBuildingActor)(ImageBase + 0x1b951b0);
@@ -264,12 +284,14 @@ void ServerEndEditingBuildingActor(AFortPlayerControllerAthena* PC, ABuildingSMA
 		return;
 	ActorToStopEditing->SetNetDormancy(ENetDormancy::DORM_DormantAll);
 	ActorToStopEditing->EditingPlayer = nullptr;
+	ActorToStopEditing->OnRep_EditingPlayer();
 
 	AFortWeap_EditingTool* EditTool = (AFortWeap_EditingTool*)PC->MyFortPawn->CurrentWeapon;
 
 	if (!EditTool)
 		return;
-	/*
+	EditTool->bEditConfirmed = true;
 	EditTool->EditActor = nullptr;
-	EditTool->OnRep_EditActor(); */
+	EditTool->OnRep_EditActor();
+
 }

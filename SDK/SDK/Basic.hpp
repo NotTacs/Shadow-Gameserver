@@ -84,7 +84,7 @@ class UClass;
 class UObject;
 class UFunction;
 
-struct FName;
+class FName;
 
 namespace BasicFilesImpleUtils
 {
@@ -1154,8 +1154,8 @@ static_assert(offsetof(FDelegateProperty, SignatureFunction) == 0x000078, "Membe
 class FMapProperty final : public FProperty
 {
 public:
-	struct FProperty*                             KeyProperty;                                       // 0x0078(0x0008)(NOT AUTO-GENERATED PROPERTY)
-	struct FProperty*                             ValueProperty;                                     // 0x0080(0x0008)(NOT AUTO-GENERATED PROPERTY)
+	FProperty*                             KeyProperty;                                       // 0x0078(0x0008)(NOT AUTO-GENERATED PROPERTY)
+	FProperty*                             ValueProperty;                                     // 0x0080(0x0008)(NOT AUTO-GENERATED PROPERTY)
 };
 static_assert(alignof(FMapProperty) == 0x000008, "Wrong alignment on FMapProperty");
 static_assert(sizeof(FMapProperty) == 0x000088, "Wrong size on FMapProperty");

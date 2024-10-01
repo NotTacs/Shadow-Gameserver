@@ -8,4 +8,6 @@ namespace GameMode
 
 	inline void (*HandleStartingNewPlayer_OG)(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* PC);
 	void HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* PC);
+
+	EFortTeam PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferred, AFortPlayerControllerAthena* PC);
 }
