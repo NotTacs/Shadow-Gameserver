@@ -129,6 +129,8 @@ void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGui
 
 	if (!Definition) return;
 
+	std::cout << "Def: " << Definition->GetFullName() << "\n";
+
 	Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
@@ -239,8 +241,10 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 	AFortWeap_EditingTool* ItemDefinition = nullptr;
 	FFortItemEntry EditToolEntry;
 
+	static UFortEditToolItemDefinition* EditTool = UObject::FindObject<UFortEditToolItemDefinition>("FortEditToolItemDefinition EditTool.EditTool");
+
 	for (const FFortItemEntry& Entry : Controller->WorldInventory->Inventory.ReplicatedEntries) {
-		if (Entry.ItemDefinition->IsA(UFortEditToolItemDefinition::StaticClass())) {
+		if (Entry.ItemDefinition == EditTool) {
 			EditToolEntry = Entry;
 			break;
 		}
@@ -248,13 +252,6 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 
 	ItemDefinition = (AFortWeap_EditingTool*)EditToolEntry.ItemDefinition;
 
-
-
-	if (ItemDefinition) {
-		ItemDefinition->EditActor = BuildingActorToEdit;
-		printf("Setting Edit Actor");
-		ItemDefinition->OnRep_EditActor();
-	}
 	BuildingActorToEdit->EditingPlayer = (AFortPlayerStateAthena*)Controller->PlayerState;
 	BuildingActorToEdit->OnRep_EditingPlayer();
 

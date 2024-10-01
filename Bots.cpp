@@ -88,7 +88,7 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 
 	//std:: cout << InRuntimeBotData.PredefinedCosmeticSetTag.TagName.ToString() << std::endl;
 
-	
+
 	if (InBotData->CharacterCustomization->CustomizationLoadout.Character->GetFullName().contains("CID_556_Athena_Commando_F_RebirthDefaultA")) {
 		UDataTable* Table = StaticLoadObject<UDataTable>("/Game/Athena/AI/MANG/Cosmetic/MANG_Cosmetic_Sets_Default.MANG_Cosmetic_Sets_Default");
 		if (Table) {
@@ -97,7 +97,7 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 				auto Second = (FFortBotCosmeticItemSetDataTableRow*)Row.Second;
 				if (Second->SetTag.TagName == InRuntimeBotData.PredefinedCosmeticSetTag.TagName) {
 					std::string String = UKismetStringLibrary::Conv_NameToString(Second->CharacterAssetId.PrimaryAssetName).ToString();
-					UAthenaCharacterItemDefinition* Character = 
+					UAthenaCharacterItemDefinition* Character =
 						StaticLoadObject<UAthenaCharacterItemDefinition>("/Game/Athena/Items/Cosmetics/Characters/" + String);
 					if (!Character) {
 						printf("No Character");
@@ -111,9 +111,14 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	}
 
 	std::cout << "Character: " << InBotData->CharacterCustomization->CustomizationLoadout.Character->GetFullName() << std::endl;
-	
-	AFortPlayerPawnAthena* Pawn = 
-		GameMode->ServerBotManager->CachedBotMutator->SpawnBot(InBotData->PawnClass, SpawnLocator, InSpawnLocation, InSpawnRotation, true);
+
+	AFortPlayerPawnAthena* Pawn =
+		SpawnBot_OG(BotManager, InSpawnLocation, InSpawnRotation, InBotData, InRuntimeBotData);
+
+	Pawn->bCanBeDamaged = true;
+	Pawn->SetMaxHealth(100.f);
+	Pawn->SetHealth(Pawn->GetMaxHealth());
+
 	ABP_PhoebeController_NonParticipant_C* Controller = (ABP_PhoebeController_NonParticipant_C*)Pawn->Controller;
 	std::cout << "Class: " << Controller->Class->GetFullName() << std::endl;
 	AllBots(Pawn, Controller);
