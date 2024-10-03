@@ -150,9 +150,9 @@ DWORD WINAPI Main(LPVOID)
 
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x237, ServerBeginEditingBuildingActor, (void**)&ServerBeginEditingBuildingActor_OG);
 
-    //VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x232, ServerEditBuildingActor, nullptr);
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x232, ServerEditBuildingActor, nullptr);
 
-    //VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x235, ServerEndEditingBuildingActor, nullptr);
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x235, ServerEndEditingBuildingActor, nullptr);
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);

@@ -118,8 +118,8 @@ void ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Component, FRo
 	}
 }
 
-void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid) {
-	if (Controller->IsInAircraft()) return;
+AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid) {
+	if (Controller->IsInAircraft()) return nullptr;
 
 	UFortItemDefinition* Definition = nullptr;
 
@@ -127,11 +127,11 @@ void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGui
 		if (WorldItem->ItemEntry.ItemGuid == ItemGuid) Definition = WorldItem->ItemEntry.ItemDefinition;
 	}
 
-	if (!Definition) return;
+	if (!Definition) return nullptr;
 
 	std::cout << "Def: " << Definition->GetFullName() << "\n";
 
-	Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
+	return Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash) {
@@ -238,7 +238,6 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 
 	std::cout << "BuildingActorToEdit: " << BuildingActorToEdit->GetFullName() << std::endl;
 
-	AFortWeap_EditingTool* ItemDefinition = nullptr;
 	FFortItemEntry EditToolEntry;
 
 	static UFortEditToolItemDefinition* EditTool = UObject::FindObject<UFortEditToolItemDefinition>("FortEditToolItemDefinition EditTool.EditTool");
@@ -250,14 +249,18 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 		}
 	}
 
-	ItemDefinition = (AFortWeap_EditingTool*)EditToolEntry.ItemDefinition;
 
 	BuildingActorToEdit->EditingPlayer = (AFortPlayerStateAthena*)Controller->PlayerState;
 	BuildingActorToEdit->OnRep_EditingPlayer();
 
 	printf("Rizz");
 
-	Controller->ServerExecuteInventoryItem(EditToolEntry.ItemGuid);
+	AFortWeap_EditingTool* EditingTool = (AFortWeap_EditingTool*)ServerExecuteInventoryItem(Controller, EditToolEntry.ItemGuid);
+
+	if (EditingTool) {
+		EditingTool->EditActor = BuildingActorToEdit;
+		EditingTool->OnRep_EditActor();
+	}
 }
 
 ABuildingSMActor* (*ReplaceBuildingActor)(ABuildingSMActor* Actor, unsigned int a2, UObject* a3, unsigned int a4, int a5, bool, AFortPlayerControllerAthena*) = decltype(ReplaceBuildingActor)(ImageBase + 0x1b951b0);
@@ -290,5 +293,4 @@ void ServerEndEditingBuildingActor(AFortPlayerControllerAthena* PC, ABuildingSMA
 	EditTool->bEditConfirmed = true;
 	EditTool->EditActor = nullptr;
 	EditTool->OnRep_EditActor();
-
 }

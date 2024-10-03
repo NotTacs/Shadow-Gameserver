@@ -9,7 +9,7 @@ void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn);
 
 void ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Component, FRotator ClientRotation);
 
-void ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid);
+AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid);
 
 inline void (*ServerAttemptInventoryDrop_OG)(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
