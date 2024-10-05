@@ -10,7 +10,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DADBRO_Squads_12.Playlist_DADBRO_Squads_12");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -27,6 +27,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		float Duration = 120.f;
 
 		GameState->bGameModeWillSkipAircraft = Playlist->bSkipAircraft;
+		GameMode->bSpawnAllStuff = true;
 		
 
 		GameState->WarmupCountdownEndTime = TimeSeconds + Duration;
@@ -58,13 +59,15 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 				GameMode->AIDirector->Activate();
 			}
 			GameMode->AIGoalManager = SpawnActor<AFortAIGoalManager>();
-
-			if (Playlist->AISettings) {
-				GameMode->AISettings = Playlist->AISettings;
-			}
 		}
 
-		
+		if (Playlist->AISettings) {
+			GameMode->AISettings = Playlist->AISettings;
+		}
+
+
+
+
 
 		bPlaylist = true;
 	}
@@ -150,6 +153,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)
 {
+	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
 	for (int i = 0; i < GameMode->StartingItems.Num(); i++) {
 		FItemAndCount Item = GameMode->StartingItems[i];
 		Inventory::GiveWorldItem(NewPlayer, Item.Item, Item.Count, 0);

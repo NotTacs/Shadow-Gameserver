@@ -93,9 +93,12 @@ void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn) 
 
 void ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Component, FRotator ClientRotation) {
 	std::cout << Component->GetOwner()->Class->GetName() << std::endl;
+	AFortGameModeAthena* GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
+	AFortGameStateAthena* GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
 	AFortPlayerControllerAthena* PlayerController = reinterpret_cast<AFortPlayerControllerAthena*>(Component->GetOwner());
 	if (PlayerController->IsInAircraft()) {
 		UWorld::GetWorld()->AuthorityGameMode->RestartPlayer(PlayerController);
+		
 	}
 }
 

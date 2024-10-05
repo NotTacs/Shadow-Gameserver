@@ -25,10 +25,15 @@ static T* StaticFindObject(std::string ObjectName)
 }
 
 template<typename T>
-inline T* StaticLoadObject(std::string name)
+T* StaticLoadObject(std::string name)
 {
-    auto Name = std::wstring(name.begin(), name.end()).c_str();
-    auto Object = (T*)StaticLoadObjectOG(T::StaticClass(), nullptr, Name, nullptr, 0, nullptr, false, nullptr);
+    T* Object = StaticFindObject<T>(name);
+
+    if (!Object)
+    {
+        auto Name = std::wstring(name.begin(), name.end()).c_str();
+        Object = (T*)StaticLoadObjectOG(T::StaticClass(), nullptr, Name, nullptr, 0, nullptr, false, nullptr);
+    }
 
     return Object;
 }
@@ -148,6 +153,32 @@ public:
         Step_OG(__int64(this),Context, Z_ParamResult);
     }
 };
+
+inline void (*sub_1A6D300)(UObject* a1) = decltype(sub_1A6D300)(ImageBase + 0x1A6D300);
+inline void sub_1A6D300_Hook(UObject* a1) {
+
+    printf("sub_1A6D300 Called");
+
+    auto GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
+    auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
+
+    std::cout << "Class: " << a1->Class->GetFullName() << std::endl;
+
+    auto G = (AFortAthenaMutator_DadBro*)GameState->GetMutatorByClass(GameMode, AFortAthenaMutator_DadBro::StaticClass());
+    G->DadBroSpawnLocation.Z = -193.048096f;
+    FTransform Transform{};
+    Transform.Translation = G->DadBroSpawnLocation;
+    Transform.Rotation = ConvertRotToQuat(G->GetDesiredDadBroRotation());
+    Transform.Scale3D = FVector(1, 1, 1);
+    UClass* Class = StaticLoadObject<UClass>("/Game/Athena/DADBRO/DADBRO_Pawn.DADBRO_Pawn_C");
+    G->DadBroPawn = SpawnActor<AFortAIPawn>(Transform, nullptr, Class);
+    G->DadBroCodeState = EDadBroState::Active;
+    G->OnRep_DadBroPawn();
+    G->OnRep_DadBroCodeState();
+    G->HandleAISpawned(G->DadBroEncounterInstance, G->DadBroPawn);
+
+    return sub_1A6D300(a1);
+}
 
 
 inline float FindCurveTable(UCurveTable* CurveTable, FName RowName) {
