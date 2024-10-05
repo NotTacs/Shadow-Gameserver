@@ -89,7 +89,7 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	//std:: cout << InRuntimeBotData.PredefinedCosmeticSetTag.TagName.ToString() << std::endl;
 
 
-	if (InBotData->CharacterCustomization->CustomizationLoadout.Character->GetFullName().contains("CID_556_Athena_Commando_F_RebirthDefaultA")) {
+	if (InBotData->CharacterCustomization->CustomizationLoadout.Character->GetName() == "CID_556_Athena_Commando_F_RebirthDefaultA") {
 		UDataTable* Table = StaticLoadObject<UDataTable>("/Game/Athena/AI/MANG/Cosmetic/MANG_Cosmetic_Sets_Default.MANG_Cosmetic_Sets_Default");
 		if (Table) {
 			for (int i = 0; i < Table->RowMap.Num(); i++) {
@@ -110,10 +110,9 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 		}
 	}
 
-	std::cout << "Character: " << InBotData->CharacterCustomization->CustomizationLoadout.Character->GetFullName() << std::endl;
+	std::cout << "Character: " << InBotData->CharacterCustomization->CustomizationLoadout.Character->GetName() << std::endl;
 
-	AFortPlayerPawnAthena* Pawn =
-		SpawnBot_OG(BotManager, InSpawnLocation, InSpawnRotation, InBotData, InRuntimeBotData);
+	AFortPlayerPawnAthena* Pawn = SpawnBot_OG(BotManager, InSpawnLocation, InSpawnRotation, InBotData, InRuntimeBotData);
 
 	Pawn->bCanBeDamaged = true;
 	Pawn->SetMaxHealth(100.f);
@@ -141,11 +140,12 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	}
 
 	//Very Very HardCoded
-	Controller->CosmeticLoadoutBC.Character = InBotData->CharacterCustomization->CustomizationLoadout.Character;
+	Controller->CosmeticLoadoutBC = InBotData->CharacterCustomization->CustomizationLoadout;
 	Pawn->CosmeticLoadout = InBotData->CharacterCustomization->CustomizationLoadout;
 	Pawn->OnRep_CosmeticLoadout();
-	((AFortPlayerStateAthena*)Controller->PlayerState)->HeroType = Controller->CosmeticLoadoutBC.Character->HeroDefinition;
+	
 	AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
+	PlayerState->HeroType = Controller->CosmeticLoadoutBC.Character->HeroDefinition;
 
 	for (int i = 0; i < PlayerState->HeroType->Specializations.Num(); i++) {
 		TSoftObjectPtr<UFortHeroSpecialization> Specialization = PlayerState->HeroType->Specializations[i];

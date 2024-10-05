@@ -64,16 +64,11 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		if (Playlist->AISettings) {
 			GameMode->AISettings = Playlist->AISettings;
 		}
-
-
-
-
-
 		bPlaylist = true;
 	}
 
-	static bool bWait = false;
-	if (!bWait) {
+	static bool bPlayerStartLcsLoaded = false;
+	if (!bPlayerStartLcsLoaded) {
 		TArray<AActor*> Actors;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortPlayerStartWarmup::StaticClass(), &Actors);
 		int Num = Actors.Num();
@@ -81,7 +76,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		if (Num == 0) {
 			return false;
 		}
-		bWait = true;
+		bPlayerStartLcsLoaded = true;
 	}
 
 	if (!GameState->MapInfo) return false;
@@ -113,6 +108,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		}
 
 		GameMode->bWorldIsReady = true;
+
 		for (int i = 0; i < CurrentPlaylist()->AdditionalLevels.Num(); i++) {
 			TSoftObjectPtr<UWorld> World = CurrentPlaylist()->AdditionalLevels[i];
 			FString LevelName = UKismetStringLibrary::Conv_NameToString(World.ObjectID.AssetPathName);
@@ -136,6 +132,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 		bListening = true;
 	}
+
 	bool bRet = GameMode->AlivePlayers.Num() > 0;
 
 	if (!bRet) {
@@ -162,25 +159,89 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
 
+	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
+
+	QuestManager->EnableQuestStateLogging();
+
 	return Pawn;
 }
 
 void GameMode::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* PC) {
-	
+	if (!PC || !PC->PlayerState || !GameMode || !GameMode->GameState) return;
 	auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
-	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
+
+	if (PC->XPComponent) {
+		PC->XPComponent->bRegisteredWithQuestManager = true;
+		PC->XPComponent->OnRep_bRegisteredWithQuestManager();
+	}
+
+	PC->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), PC);
 
 	return HandleStartingNewPlayer_OG(GameMode, PC);
 }
 
-int Teams = 0;
+inline EFortTeam GetNextEmptyTeam(int MaxTeamCount, int MaxSquadSize) {
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+
+	if (GameState) {
+		auto Teams = GameState->Teams;
+		for (int i = 3; i < Teams.Num(); i++) {
+			auto Team = Teams[i];
+			if (!Team.IsValid()) continue;
+			if (Team.Num() < MaxSquadSize && i <= (MaxTeamCount + 3)) return EFortTeam(i);
+		}
+	}
+
+	return EFortTeam::Spectator;
+}
+
+inline EFortTeam GetLowestTeam(int MaxTeamCount, int MaxSquadSize) {
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+	std::pair<int, int> LowestTeam = { 0,0 }; //TeamIndex,Num
+	if (GameState) {
+		auto Teams = GameState->Teams;
+		for (int i = 3; i < Teams.Num(); i++) {
+			auto Team = Teams[i];
+			if (!Team.IsValid()) continue;
+			if (Team.Num() < MaxSquadSize && i <= (MaxTeamCount + 3) && Team.Num() <= LowestTeam.second) {
+				LowestTeam = { i,Team.Num() };
+			}
+		}
+		return EFortTeam(LowestTeam.first);
+	}
+
+	return EFortTeam::Spectator;
+}
+
 EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferred, AFortPlayerControllerAthena* PC) {
 	
-	UFortPlaylistAthena* Playlist = CurrentPlaylist();
-	if (Teams >= 100) {
-		PC->ClientReturnToMainMenu(L"Game Is Full");
-	}
-	auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
+	if (!GameMode || !PC) return EFortTeam::Spectator;
 
-	return EFortTeam(3);
+	UFortPlaylistAthena* Playlist = CurrentPlaylist();
+
+	bool bSpreadTeams = (Playlist->bShouldSpreadTeams || Playlist->bIsLargeTeamGame);
+	int MaxTeamCount = Playlist->MaxTeamCount;
+	int MaxSquadSize = Playlist->MaxSquadSize;
+
+	EFortTeam Ret = (bSpreadTeams ? (GetLowestTeam(MaxTeamCount, MaxSquadSize)) : (GetNextEmptyTeam(MaxTeamCount, MaxSquadSize)));
+
+	if (PC->PlayerState) {
+		AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
+		PlayerState->SquadId = ((int)Ret - 3);
+		if (GameMode->GameState) {
+			AFortGameStateAthena* GameState = (AFortGameStateAthena*)GameMode->GameState;
+
+			TWeakObjectPtr<AFortPlayerStateAthena> WeakPlayerState{ PlayerState->Index, UObject::GObjects->GetSNByIndex(PlayerState->Index) };
+
+			GameState->Teams[(int)Ret].Add(WeakPlayerState);
+			GameState->Squads[PlayerState->SquadId].Add(WeakPlayerState);
+
+			FGameMemberInfo MemberInfo{ -1,-1,-1 ,PlayerState->SquadId,(int)Ret,0,0,PlayerState->UniqueId};
+			GameState->GameMemberInfoArray.Members.Add(MemberInfo);
+			GameState->GameMemberInfoArray.MarkArrayDirty();
+		}
+	}
+
+	return Ret;
 }
