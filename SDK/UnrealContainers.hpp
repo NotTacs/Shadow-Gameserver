@@ -281,7 +281,6 @@ namespace UC
 
 		inline void Free()
 		{
-
 			if (Data)
 			{
 				FFree(Data);
