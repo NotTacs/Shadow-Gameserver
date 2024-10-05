@@ -10,7 +10,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -150,32 +150,13 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)
 {
-	printf("SpawnDefaultPawnFor");
 	for (int i = 0; i < GameMode->StartingItems.Num(); i++) {
 		FItemAndCount Item = GameMode->StartingItems[i];
-		std::cout << "Item: " << Item.Item->GetFullName() << std::endl;
 		Inventory::GiveWorldItem(NewPlayer, Item.Item, Item.Count, 0);
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
 
-	std::cout << __int64(GetWorld()->NavigationSystem) << "\n";
-	std::cout << (GetWorld()->NavigationSystem ? __int64(((UNavigationSystemV1*)GetWorld()->NavigationSystem)->MainNavData) : 0) << "\n";
-
-	/* *((BYTE*)(GetWorld()->NavigationSystem + 920)) &= 0xFD;
-
-	Sub_16BDED0((UNavigationSystemV1*)GetWorld()->NavigationSystem);
-
-	*/
-
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
-
-	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
-
-	QuestManager->EnableQuestStateLogging();
-
-	for (UFortAccoladeItem* Item : QuestManager->CurrentAccolades) {
-		std::cout << "Item: " << Item->GetFullName() << std::endl;
-	}
 
 	return Pawn;
 }

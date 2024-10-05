@@ -24,6 +24,18 @@ void TickFlushHook(UNetDriver* Driver)
         Sleep(1000);
     }
 
+    if (GetAsyncKeyState(VK_F3)) {
+        static auto JerkyLoader = UObject::FindObject<UObject>("BP_Jerky_Loader_C JerkyLoaderLevel.JerkyLoaderLevel.PersistentLevel.BP_Jerky_Loader_2");
+
+        if (JerkyLoader) {
+            printf("JerkyLoader found");
+
+            static UFunction* StartEvent = JerkyLoader->Class->GetFunction("BP_Jerky_Loader_C", "StartEvent");
+            float ZuluIsGay = 0.f;
+            JerkyLoader->ProcessEvent(StartEvent, &ZuluIsGay);
+        }
+    }
+
     return TickFlushOG(Driver);
 }
 
@@ -51,9 +63,6 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
         if (Object->Class == AFortPlayerControllerZone::StaticClass()) {
             std::cout << "FuncName: " << Function->GetFullName() << std::endl;
         }
-        if (FuncName.contains("Quest")) {
-            std::cout << "FuncName: " << Function->GetFullName() << std::endl;
-        }
     }
 
     return PE_OG(Object, Function, Params);
@@ -67,11 +76,10 @@ DWORD WINAPI Main(LPVOID)
     SetConsoleTitleA("Reverse");
     MH_Initialize();
     Sleep(5000);
-    
-    
 
     GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"open Apollo_Terrain", nullptr);
+
 
     Hook(ImageBase + 0x4640A30, GameMode::ReadyToStartMatchHook, nullptr);
     Hook(ImageBase + 0x45c9d90, GetNetMode, nullptr);
@@ -85,6 +93,7 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x19E9B10, SpawnBot, (void**)&SpawnBot_OG);
     Hook(ImageBase + 0x2683f80, OnDamageServer, (void**)&OnDamageServer_OG);
     Hook(ImageBase + 0x29B5C80, ClientOnPawnDied, (void**)&ClientOnPawnDied_OG);
+    Hook(ImageBase + 0x1F96650, CompletePickupAnimation, (void**)&CompletePickupAnimation_OG);
     //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
 
     std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
@@ -123,8 +132,6 @@ DWORD WINAPI Main(LPVOID)
 
     uint64_t GIsClient = ImageBase + 0x804b659;
     *(bool*)GIsClient = false;
-   
-    UFortMutatorListComponent* MutatorList;
 
     DWORD d;
     VirtualProtect(UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89], 8, PAGE_EXECUTE_READWRITE, &d);
@@ -154,6 +161,8 @@ DWORD WINAPI Main(LPVOID)
 
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x235, ServerEndEditingBuildingActor, nullptr);
 
+    VFTHook(AFortPlayerPawnAthena::GetDefaultObj()->VTable, 0x1EA, ServerHandlePickup, nullptr);
+
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineSession VeryVerbose", nullptr);
@@ -172,7 +181,6 @@ DWORD WINAPI Main(LPVOID)
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogAthenaBots VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogMutatorAI VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogDadBro VeryVerbose", nullptr);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogBuilding VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortLoot VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortTeams VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortQuest VeryVerbose", nullptr);

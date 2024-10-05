@@ -11,8 +11,6 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	WorldItem->ItemEntry.Level = Level;
 	WorldItem->ItemEntry.LoadedAmmo = 0;
 
-	if (Stack) Pickup = false;
-
 	if (Pickup) {
 		FFortItemEntryStateValue State{};
 		State.IntValue = 1;
@@ -152,5 +150,21 @@ FGuid Inventory::GetGuid(AFortPlayerControllerAthena* PC, UFortItemDefinition* D
 			return Item->ItemEntry.ItemGuid;
 		}
 		else continue;
+	}
+}
+
+bool Inventory::ItemIsInInventory(AFortPlayerControllerAthena* PC, UFortItemDefinition* Def) {
+	for (UFortWorldItem* Raax : PC->WorldInventory->Inventory.ItemInstances) {
+		if (Raax->ItemEntry.ItemDefinition == Def) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+FFortItemEntry Inventory::GetEntry(AFortPlayerControllerAthena* PC, FGuid Guid) {
+	for (FFortItemEntry Entry : PC->WorldInventory->Inventory.ReplicatedEntries) {
+		if (Entry.ItemGuid == Guid) return Entry;
 	}
 }

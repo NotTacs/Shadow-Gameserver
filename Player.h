@@ -9,6 +9,11 @@ void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn);
 
 void ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Component, FRotator ClientRotation);
 
+void ServerHandlePickup(AFortPlayerPawnAthena* Pawn, AFortPickup* Pickup, float InFlyTime, const struct FVector& InStartDirection, bool bPlayPickupSound);
+
+inline char (*CompletePickupAnimation_OG)(AFortPickup* Pickup);
+char CompletePickupAnimation(AFortPickup* Pickup);
+
 AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid);
 
 inline void (*ServerAttemptInventoryDrop_OG)(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);

@@ -5,8 +5,6 @@
 #include "Looting.h"
 
 void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
-
-	std::cout << "ServerReadyToStartMatch" << std::endl;
 	auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 
 	static bool bFirst = false;
@@ -60,8 +58,6 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	auto PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
 	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
 
-	std::cout << "GameMemberArray: " << GameState->GameMemberInfoArray.Members.Num() << std::endl;
-
 	FGameMemberInfo MemberInfo{};
 	MemberInfo.MostRecentArrayReplicationKey = -1;
 	MemberInfo.ReplicationID = -1;
@@ -73,24 +69,10 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	GameState->GameMemberInfoArray.Members.Add(MemberInfo);
 	GameState->GameMemberInfoArray.MarkItemDirty(MemberInfo);
 
-	std::cout << "GameMembersNow: " << GameState->GameMemberInfoArray.Members.Num() << std::endl;
-
-	Sleep(2000);
-
 	std::cout << GameMode->NumTeams << std::endl;
 
 	Controller->XPComponent->bRegisteredWithQuestManager = true;
 	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
-
-	std::cout << "Acolodes: " << Controller->XPComponent->PlayerAccolades.Num() << std::endl;
-
-	if (!Controller->MatchReport) {
-		std::cout << "Player has no Match Report" << std::endl;
-	}
-
-	if (Controller->IsPartyLeader()) {
-		std::cout << "Party Leader !!" << std::endl;
-	}
 
 	auto PS = (AFortPlayerStateAthena*)Controller->PlayerState;
 
@@ -101,7 +83,6 @@ void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn) 
 
 	Controller->AcknowledgedPawn = Pawn;
 
-	std::cout << "ServerAcknowledgePosession" << std::endl;
 	static auto Set = StaticLoadObject<UFortAbilitySet>("/Game/Abilities/Player/Generic/Traits/DefaultPlayer/GAS_AthenaPlayer.GAS_AthenaPlayer");
 	Abilities::GiveAbilitySet(Controller->MyFortPawn, Set);
 
@@ -129,15 +110,14 @@ AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid
 
 	if (!Definition) return nullptr;
 
-	std::cout << "Def: " << Definition->GetFullName() << "\n";
-
 	return Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash) {
-	printf("ServerAttemptInventoryDrop");
 
-	Inventory::RemoveItem((AFortPlayerControllerAthena*)Controller, ItemGuid, Count);
+	std::cout << "Count: " << Count << std::endl;
+
+	Inventory::RemoveItem((AFortPlayerControllerAthena*)Controller, ItemGuid, Count, true);
 
 	return ServerAttemptInventoryDrop_OG(Controller, ItemGuid, Count, bTrash);
 }
@@ -149,7 +129,7 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 	printf("ClientOnPawnDied");
 	if (DeathReport.ServerTimeForRespawn == 0 || DeathReport.ServerTimeForResurrect == 0) {
 		printf("Player Will Not Respawn");
-		if (KillerPawn && KillerPlayerState && Controller && !DeadPlayerState->DeathInfo.bDBNO) {
+		if (Controller) {
 			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
 				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
 
@@ -157,10 +137,9 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 		}
 	}
 	else {
-		if (KillerPawn && KillerPlayerState && Controller && !DeadPlayerState->DeathInfo.bDBNO) {
+		if (Controller) {
 			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
 				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
-
 			}
 		}
 	}
@@ -182,7 +161,7 @@ void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGamepl
 				float sas = round(What / Vhat);
 
 				FortController->ClientReportDamagedResourceBuilding(A, A->ResourceType, sas, false, Damage == 100.0f);
-				Inventory::GiveWorldItem(FortController, UFortKismetLibrary::K2_GetResourceItemDefinition(A->ResourceType), sas, 0, true);
+				Inventory::GiveWorldItem(FortController, UFortKismetLibrary::K2_GetResourceItemDefinition(A->ResourceType), sas, 0, true, false);
 			}
 		}
 	}
@@ -194,9 +173,6 @@ void OnDamageServer(ABuildingSMActor* Object, float Damage, const struct FGamepl
 __int64 (*CantBuild)(UWorld*, UClass*, FVector, FRotator, bool, TArray<ABuildingSMActor*>*, char*) = decltype(CantBuild)(ImageBase + 0x1e57790);
 
 void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const struct FCreateBuildingActorData& CreateBuildingData) {
-
-
-
 	if (Controller->BroadcastRemoteClientInfo->RemoteBuildableClass && Controller) {
 		TArray<ABuildingSMActor*> ActorsToRemove;
 		char a7;
@@ -205,7 +181,6 @@ void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const st
 			Transform.Translation = CreateBuildingData.BuildLoc;
 			Transform.Rotation = ConvertRotToQuat(CreateBuildingData.BuildRot);
 			Transform.Scale3D = FVector(1, 1, 1);
-			std::cout << "BuildingClass: " << Controller->BroadcastRemoteClientInfo->RemoteBuildableClass.Get()->GetFullName() << "\n";
 			ABuildingSMActor* Building = SpawnActor<ABuildingSMActor>(Transform, Controller, Controller->BroadcastRemoteClientInfo->RemoteBuildableClass.Get());
 			Building->bPlayerPlaced = true;
 			Building->SetMirrored(CreateBuildingData.bMirrored);
@@ -227,6 +202,53 @@ void ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, const st
 	return ServerCreateBuildingActor_OG(Controller, CreateBuildingData);
 }
 
+void ServerHandlePickup(AFortPlayerPawnAthena* Pawn, AFortPickup* Pickup, float InFlyTime, const struct FVector& InStartDirection, bool bPlayPickupSound) {
+	InFlyTime = 0.4;
+
+	Pickup->PickupLocationData.bPlayPickupSound = bPlayPickupSound;
+	Pickup->PickupLocationData.ItemOwner = Pawn;
+	Pickup->PickupLocationData.StartDirection = FVector_NetQuantizeNormal(InStartDirection);
+	Pickup->PickupLocationData.PickupTarget = Pawn;
+	Pickup->PickupLocationData.FlyTime = InFlyTime;
+	Pickup->OnRep_PickupLocationData();
+	Pickup->OnRep_PickupOwnerData();
+	Pickup->bPickedUp = true;
+	Pickup->OnRep_bPickedUp();
+}
+
+
+
+char CompletePickupAnimation(AFortPickup* Pickup) {
+	auto PC = (AFortPlayerControllerAthena*)Pickup->PickupLocationData.PickupTarget->Controller;
+	if (!PC) return CompletePickupAnimation_OG(Pickup);
+	if (PC->SwappingItemDefinition) {
+		Inventory::SpawnPickup(PC->SwappingItemDefinition, PC->Pawn->K2_GetActorLocation(), PC->SwappingItemDefinition->DropCount, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PC->MyFortPawn);
+		PC->SwappingItemDefinition = nullptr;
+	}
+	else {
+		int Items = 0;
+		for (FFortItemEntry Entry : PC->WorldInventory->Inventory.ReplicatedEntries) {
+			if (Inventory::IsPrimaryQuickbar(Entry.ItemDefinition)) Items++;
+		}
+		if (Items >= 5 && Inventory::IsPrimaryQuickbar(Pickup->PrimaryPickupItemEntry.ItemDefinition) && Inventory::IsPrimaryQuickbar(PC->MyFortPawn->CurrentWeapon->WeaponData)) {
+
+			FFortItemEntry ItemEntry = Inventory::GetEntry(PC, PC->MyFortPawn->CurrentWeapon->ItemEntryGuid);
+			PC->ServerAttemptInventoryDrop(ItemEntry.ItemGuid, ItemEntry.Count, false);
+		}
+		else {
+		}
+
+		if (Inventory::ItemIsInInventory(PC, Pickup->PrimaryPickupItemEntry.ItemDefinition) && Pickup->PrimaryPickupItemEntry.ItemDefinition->IsStackable() || Pickup->PrimaryPickupItemEntry.ItemDefinition->IsA(UFortAmmoItemDefinition::StaticClass()) && Pickup->PrimaryPickupItemEntry.Count == Pickup->PrimaryPickupItemEntry.ItemDefinition->MaxStackSize.Value) {
+			Inventory::GiveWorldItem(PC, Pickup->PrimaryPickupItemEntry.ItemDefinition, Pickup->PrimaryPickupItemEntry.Count, 0, true, true);
+		}
+		else {
+			Inventory::GiveWorldItem(PC, Pickup->PrimaryPickupItemEntry.ItemDefinition, Pickup->PrimaryPickupItemEntry.Count, 0, false, true);
+			Items++;
+		}
+	}
+	return CompletePickupAnimation_OG(Pickup);
+}
+
 void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, ABuildingSMActor* BuildingActorToEdit) {
 	if (!Controller) {
 		return;
@@ -235,8 +257,6 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 		printf("No building Actor");
 		return;
 	}
-
-	std::cout << "BuildingActorToEdit: " << BuildingActorToEdit->GetFullName() << std::endl;
 
 	FFortItemEntry EditToolEntry;
 
@@ -253,8 +273,6 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 	BuildingActorToEdit->EditingPlayer = (AFortPlayerStateAthena*)Controller->PlayerState;
 	BuildingActorToEdit->OnRep_EditingPlayer();
 
-	printf("Rizz");
-
 	AFortWeap_EditingTool* EditingTool = (AFortWeap_EditingTool*)ServerExecuteInventoryItem(Controller, EditToolEntry.ItemGuid);
 
 	if (EditingTool) {
@@ -266,7 +284,6 @@ void ServerBeginEditingBuildingActor(AFortPlayerControllerAthena* Controller, AB
 ABuildingSMActor* (*ReplaceBuildingActor)(ABuildingSMActor* Actor, unsigned int a2, UObject* a3, unsigned int a4, int a5, bool, AFortPlayerControllerAthena*) = decltype(ReplaceBuildingActor)(ImageBase + 0x1b951b0);
 
 void ServerEditBuildingActor(AFortPlayerControllerAthena* Controller, class ABuildingSMActor* BuildingActorToEdit, TSubclassOf<class ABuildingSMActor> NewBuildingClass, uint8 RotationIterations, bool bMirrored) {
-	printf("ServerEditBuildingActor");
 	
 	if (!BuildingActorToEdit || !NewBuildingClass || !Controller) return;
 
