@@ -166,20 +166,8 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	return Pawn;
 }
 
-void GameMode::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* PC) {
-	if (!PC || !PC->PlayerState || !GameMode || !GameMode->GameState) return;
-	auto PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
-	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
+//GD I Wasn't using this for a reason, it crashes on hooking
 
-	if (PC->XPComponent) {
-		PC->XPComponent->bRegisteredWithQuestManager = true;
-		PC->XPComponent->OnRep_bRegisteredWithQuestManager();
-	}
-
-	PC->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), PC);
-
-	return HandleStartingNewPlayer_OG(GameMode, PC);
-}
 
 inline EFortTeam GetNextEmptyTeam(int MaxTeamCount, int MaxSquadSize) {
 	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;

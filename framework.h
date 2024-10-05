@@ -154,6 +154,19 @@ public:
     }
 };
 
+inline void (*SetZoneToIndexOG)(AFortGameModeAthena* GameMode, int a2);
+inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
+    printf("SetZoneToIndexCalled \n");
+
+    auto SafeZoneDurations = *(UObject**)(__int64(GameMode) + 0x278);
+
+    std::cout << "SafeZoneDurations: " << __int64(SafeZoneDurations->VTable) << "\n";
+
+    std::cout << "[AFortGameModeAthena::SetZoneToIndex]: A2 Value: " << a2 << std::endl;
+
+    return SetZoneToIndexOG(GameMode, a2);
+}
+
 inline void (*sub_1A6D300)(UObject* a1) = decltype(sub_1A6D300)(ImageBase + 0x1A6D300);
 inline void sub_1A6D300_Hook(UObject* a1) {
 
@@ -176,6 +189,8 @@ inline void sub_1A6D300_Hook(UObject* a1) {
     G->OnRep_DadBroPawn();
     G->OnRep_DadBroCodeState();
     G->HandleAISpawned(G->DadBroEncounterInstance, G->DadBroPawn);
+
+    //This could be better coded, I need to figure out which one is supposed to be the SpawnDadBro Function and hook that
 
     return sub_1A6D300(a1);
 }

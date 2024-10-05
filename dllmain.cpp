@@ -92,7 +92,10 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x29B5C80, ClientOnPawnDied, (void**)&ClientOnPawnDied_OG);
     Hook(ImageBase + 0x1F96650, CompletePickupAnimation, (void**)&CompletePickupAnimation_OG);
     Hook(ImageBase + 0x1A6D300, sub_1A6D300_Hook, (void**)&sub_1A6D300);
+    Hook(ImageBase + 0x18FD350, SetZoneToIndex, (void**)&SetZoneToIndexOG);
     //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
+
+    
 
     std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
     std::vector<uint64_t> RetTrueFuncs = { ImageBase + 0x4155600, ImageBase + 0x2DBCBA0 };
