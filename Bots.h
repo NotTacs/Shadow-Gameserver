@@ -1,8 +1,7 @@
 #pragma once
+
 #include "framework.h"
 #include <fstream>
-
-std::vector<AFortAthenaPatrolPath*> GetPatrolPaths();
 
 void GiveItem(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def, int count = 999, int Level = 0);
 

@@ -1,21 +1,6 @@
 #include "Bots.h"
+
 #include <intrin.h>
-std::vector<AFortAthenaPatrolPath*> GetPatrolPaths()
-{
-	static std::vector<AFortAthenaPatrolPath*> PatrolPaths;
-	if (PatrolPaths.size() == 0) {
-		for (int i = 0; i < UObject::GObjects->Num(); i++) {
-			UObject* Object = UObject::GObjects->GetByIndex(i);
-
-			if (!Object) continue;
-
-			if (Object->IsA(AFortAthenaPatrolPath::StaticClass())) {
-				PatrolPaths.push_back((AFortAthenaPatrolPath*)Object);
-			}
-		}
-	}
-	return PatrolPaths;
-}
 
 void GiveItem(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def, int count, int Level) {
 	UFortWorldItem* Item = (UFortWorldItem*)Def->CreateTemporaryItemInstanceBP(count, Level);
@@ -27,11 +12,6 @@ void GiveItem(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def, 
 		Controller->Inventory->Inventory.MarkItemDirty(Item->ItemEntry);
 		Controller->Inventory->HandleInventoryLocalUpdate();
 	}
-	else {
-		return;
-	}
-
-	//Item->ItemEntry.LoadedAmmo = 0;
 }
 
 FGuid GetGuid(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def) {
@@ -73,12 +53,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 		printf("Null Bot Mutator");
 		return SpawnBot_OG(BotManager, InSpawnLocation, InSpawnRotation, InBotData, InRuntimeBotData);
 	}
-
-	FTransform Transform;
-	Transform.Translation = InSpawnLocation;
-	Transform.Rotation = ConvertRotToQuat(InSpawnRotation);
-	Transform.Scale3D = FVector(1, 1, 1);
-	AActor* SpawnLocator = SpawnActor<ADefaultPawn>(Transform);
 
 	//MangElevators
 	static UFortAthenaAIBotEvaluator* DBNO = (UFortAthenaAIBotEvaluator*)StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/AI/MANG/Evaluators/MANG_Evaluator_DBNO.MANG_Evaluator_DBNO_C");
@@ -173,14 +147,19 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	Controller->Inventory->Inventory.ItemInstances = TArray<class UFortWorldItem*>();
 	Controller->Inventory->SetOwner(Controller);
 
-	if (InBotData->StartupInventory) {
-		for (int i = 0; i < InBotData->StartupInventory->Items.Num(); i++) {
+	if (InBotData->StartupInventory)
+	{
+		for (int i = 0; i < InBotData->StartupInventory->Items.Num(); i++)
+		{
 			UFortItemDefinition* Item = InBotData->StartupInventory->Items[i];
-			if (!Item) continue;
+
+			if (!Item)
+				continue;
 			std::cout << "Item: " << Item->GetFullName() << "\n";
 			GiveItem(Controller, Item,1, 0);
 			FName MiscItem = UKismetStringLibrary::Conv_StringToName(L"Weapon.Meta.MiscWrapped");
-			if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GameplayTags.GameplayTags[0].TagName != MiscItem ) {
+			if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GameplayTags.GameplayTags[0].TagName != MiscItem )
+			{
 				Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Item, GetGuid(Controller, Item));
 			}
 		}
@@ -191,6 +170,5 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	//GameMode->ChangeName(Controller, UKismetTextLibrary::Conv_TextToString(InBotData->BotNameSettings->OverrideName), true);
 	//Controller->BotPlayerName = UKismetTextLibrary::Conv_TextToString(InBotData->BotNameSettings->OverrideName);
 
-	SpawnLocator->K2_DestroyActor();
 	return Pawn;
 }
