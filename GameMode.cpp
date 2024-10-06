@@ -216,16 +216,14 @@ EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferre
 
 	if (PC->PlayerState) {
 		AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
-		PlayerState->SquadId = ((int)Ret - 2);
+		PlayerState->SquadId = ((int)Ret - 3);
 		if (GameMode->GameState) {
 			AFortGameStateAthena* GameState = (AFortGameStateAthena*)GameMode->GameState;
 
-			TWeakObjectPtr<AFortPlayerStateAthena> WeakPlayerState{};
-			WeakPlayerState.ObjectSerialNumber = 0;
-			WeakPlayerState.ObjectIndex = PlayerState->Index;
+			TWeakObjectPtr<AFortPlayerStateAthena> WeakPlayerState{ PlayerState->Index, UObject::GObjects->GetSNByIndex(PlayerState->Index) };
 
-			GameState->Teams[PlayerState->SquadId].Add(WeakPlayerState);
-			//GameState->Squads[PlayerState->SquadId].Add(WeakPlayerState);
+			GameState->Teams[(int)Ret].Add(WeakPlayerState);
+			GameState->Squads[PlayerState->SquadId].Add(WeakPlayerState);
 
 			FGameMemberInfo MemberInfo{ -1,-1,-1 ,PlayerState->SquadId,(int)Ret,0,0,PlayerState->UniqueId};
 			GameState->GameMemberInfoArray.Members.Add(MemberInfo);

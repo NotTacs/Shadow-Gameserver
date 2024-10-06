@@ -56,13 +56,7 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	}
 
 	auto PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
-	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
-
-	PlayerState->SquadId = PlayerState->TeamIndex - 2;
-	PlayerState->OnRep_SquadId();
-	PlayerState->OnRep_TeamIndex(0);
-	PlayerState->OnRep_PlayerTeam();
-	PlayerState->OnRep_PlayerTeamPrivate();
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
 
 	FGameMemberInfo MemberInfo{};
 	MemberInfo.MostRecentArrayReplicationKey = -1;
@@ -71,13 +65,6 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	MemberInfo.MemberUniqueId = PlayerState->UniqueId;
 	MemberInfo.TeamIndex = PlayerState->TeamIndex;
 	MemberInfo.SquadId = PlayerState->SquadId;
-
-	TWeakObjectPtr<AFortPlayerStateAthena> WeakPlayerState{};
-	WeakPlayerState.ObjectSerialNumber = 0;
-	WeakPlayerState.ObjectIndex = PlayerState->Index;
-
-	//GameState->Teams[PlayerState->SquadId].Add(WeakPlayerState);
-	//GameState->Squads[PlayerState->SquadId].Add(WeakPlayerState);
 
 	GameState->GameMemberInfoArray.Members.Add(MemberInfo);
 	GameState->GameMemberInfoArray.MarkItemDirty(MemberInfo);
@@ -231,6 +218,8 @@ void ServerHandlePickup(AFortPlayerPawnAthena* Pawn, AFortPickup* Pickup, float 
 	Pickup->bPickedUp = true;
 	Pickup->OnRep_bPickedUp();
 }
+
+
 
 char CompletePickupAnimation(AFortPickup* Pickup) {
 	auto PC = (AFortPlayerControllerAthena*)Pickup->PickupLocationData.PickupTarget->Controller;
