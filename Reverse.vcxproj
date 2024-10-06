@@ -168,6 +168,7 @@
     <ClCompile Include="SDK\SDK\FortniteGame_functions.cpp" />
     <ClCompile Include="SDK\SDK\GameplayAbilities_functions.cpp" />
     <ClCompile Include="SDK\SDK\NavigationSystem_functions.cpp" />
+    <ClCompile Include="SDK\SDK\UMG_functions.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>

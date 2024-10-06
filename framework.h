@@ -6,9 +6,13 @@
 using namespace SDK;
 #include "Minhook.h"
 
+
+static bool bCreative = false;
+
 inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
 
+inline UUserWidget* (*CreateWidgetInstance)(APlayerController& OwnerPC, TSubclassOf<UUserWidget> Class, FName WidgetName) = decltype(CreateWidgetInstance)(ImageBase + 0x3C8ECE0);
 inline double (*InitQuests)(UFortQuestManager*, unsigned __int8 a2, char a3) = decltype(InitQuests)(ImageBase + 0x23A5B80);
 inline void (*Sub_16BDED0)(UNavigationSystemV1* System) = decltype(Sub_16BDED0)(ImageBase + 0x16BDED0);
 inline void (*Build)(UNavigationSystemV1* System) = decltype(Build)(ImageBase + 0x4804AA0);
@@ -22,6 +26,23 @@ static T* StaticFindObject(std::string ObjectName)
     auto NameWStr = std::wstring(ObjectName.begin(), ObjectName.end()).c_str();
 
     return (T*)StaticFindObjectOG(T::StaticClass(), nullptr, NameWStr, false);
+}
+
+inline std::string LootTierGroupModifcation(const std::string& input) {
+    if (input.contains("Athena")) return input;
+
+    size_t pos = input.find('_');
+
+    if (pos != std::string::npos && input.substr(0, pos) == "Loot") {
+        return "Loot_Athena" + input.substr(pos + 1);
+    }
+
+    return input;
+}
+
+inline std::string ToString2(FName Name)  {
+    FString F = UKismetStringLibrary::Conv_NameToString(Name);
+    return F.ToString();
 }
 
 template<typename T>
@@ -154,17 +175,34 @@ public:
     }
 };
 
+inline __int64 (*GameStateShit)() = decltype(GameStateShit)(ImageBase + 0x2857EC0);
+
 inline void (*SetZoneToIndexOG)(AFortGameModeAthena* GameMode, int a2);
 inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
     printf("SetZoneToIndexCalled \n");
 
-    auto SafeZoneDurations = *(UObject**)(__int64(GameMode) + 0x278);
-
-    std::cout << "SafeZoneDurations: " << __int64(SafeZoneDurations->VTable) << "\n";
-
-    std::cout << "[AFortGameModeAthena::SetZoneToIndex]: A2 Value: " << a2 << std::endl;
-
     return SetZoneToIndexOG(GameMode, a2);
+}
+
+inline void (*sub_1A91DC0)(UObject* Mutator, int a2, __int64 a3);
+inline void sub_1A91DC0_Hook(AFortAthenaMutator_Mash* Mutator, int a2, UFortDifficultyEncounterSettings* a3) {
+
+    printf("Called");
+
+    auto GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
+    auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
+
+    auto System = (UAthenaAISystem*)UWorld::GetWorld()->AISystem;
+
+    std::cout << "MutatorClass: " << Mutator->Class->GetName() << std::endl;
+
+    auto ObjectVFT = a3->VTable;
+
+    std::cout << std::hex << __int64(ObjectVFT) - ImageBase;
+
+    auto Shit = (__int64*)a3;
+
+    return sub_1A91DC0(Mutator, a2, *Shit);
 }
 
 inline void (*sub_1A6D300)(UObject* a1) = decltype(sub_1A6D300)(ImageBase + 0x1A6D300);
@@ -218,4 +256,24 @@ inline void VFTHook(void** VFT, int Index, void* Hook, void** OG) {
     VFT[Index] = Hook;
     DWORD b;
     VirtualProtect(VFT + Index, 8, S, &b);
+}
+
+inline float GetRewardAmount(UFortAccoladeItemDefinition* Def) {
+    return FindCurveTable(Def->XpRewardAmount.Curve.CurveTable, Def->XpRewardAmount.Curve.RowName);
+}
+
+inline void GiveAccolade(AFortPlayerControllerAthena* Controller, UFortAccoladeItemDefinition* Def) {
+    FAthenaAccolades Accolades{};
+    Accolades.AccoladeDef = Def;
+    Accolades.Count = 1;
+    Accolades.TemplateId = Def->GetName();
+    Controller->XPComponent->PlayerAccolades.Add(Accolades);
+    //Controller->XPComponent->ClientMedalsRecived(Controller->XPComponent->PlayerAccolades);
+    FXPEventInfo Info{};
+    Info.Accolade = UKismetSystemLibrary::GetPrimaryAssetIdFromObject(Def);
+    Info.EventName = Def->Name;
+    Info.EventXpValue = GetRewardAmount(Def);
+    Info.Priority = Def->GetPriority();
+    Info.SimulatedText = Def->Description;
+    Controller->XPComponent->OnXPEvent(Info);
 }

@@ -95,6 +95,9 @@
     <ClCompile Include="SDK\SDK\AIModule_functions.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="SDK\SDK\UMG_functions.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="minhook.lib">

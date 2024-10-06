@@ -13,20 +13,23 @@ std::vector<double> GetCumlativeWeights(std::vector<FFortLootTierData*> LootTier
 }
 
 FFortLootTierData* GetChosenLootTierData(std::vector<FFortLootTierData*> LootTiers) {
-	auto CumWeights = GetCumlativeWeights(LootTiers);
-	std::random_device RD;
-	std::mt19937 putyourseedinmyass(RD());
-	std::uniform_real_distribution<> dis(0.0, CumWeights.back());
+	if (LootTiers.size() != 0) {
+		auto CumWeights = GetCumlativeWeights(LootTiers);
+		std::random_device RD;
+		std::mt19937 putyourseedinmyass(RD());
+		std::uniform_real_distribution<> dis(0.0, CumWeights.back());
 
-	double grape = dis(putyourseedinmyass);
+		double grape = dis(putyourseedinmyass);
 
-	for (size_t PDiddy = 0; PDiddy < CumWeights.size(); ++PDiddy) {
-		if (grape < CumWeights[PDiddy]) {
-			return LootTiers[PDiddy];
+		for (size_t PDiddy = 0; PDiddy < CumWeights.size(); ++PDiddy) {
+			if (grape < CumWeights[PDiddy]) {
+				return LootTiers[PDiddy];
+			}
 		}
 	}
 
-	return LootTiers.back(); //Gay Sex if happen
+
+	return nullptr; //Gay Sex if happen
 }
 
 std::vector<double> GetCumlativeWeightsP(std::vector<FFortLootPackageData*> LootPackages) {
@@ -57,18 +60,45 @@ FFortLootPackageData* GetChosenLootTierDataP(std::vector<FFortLootPackageData*> 
 	}
 	
 
-	return LootTiers.back(); //Gay Sex if happen
+	return nullptr; //Gay Sex if happen
 }
 
 std::vector<FFortItemEntry> GetItems(FName Name) {
 	std::vector<FFortItemEntry> LootDrops;
 
-	static UDataTable* LDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootTierData_Client.AthenaLootTierData_Client");
-	static UDataTable* PDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootPackages_Client.AthenaLootPackages_Client");
+	static UDataTable* LDataTable;
+	static UDataTable* PDataTable;
+	std::string Test = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootTierData.ObjectID.AssetPathName).ToString();
+	std::string Test2 = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootPackages.ObjectID.AssetPathName).ToString();
+	if (Test.empty() || Test.contains("None")) {
+		LDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootTierData_Client.AthenaLootTierData_Client");
+		PDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootPackages_Client.AthenaLootPackages_Client");
+	}
+	else {
+		LDataTable = StaticLoadObject<UDataTable>(Test);
+		PDataTable = StaticLoadObject<UDataTable>(Test2);
+	}
+
+	if (!LDataTable || !PDataTable) return LootDrops;
+
+	if (Name.ToString() == "None" || Test.empty()) return LootDrops;
+
+	std::string Rizz = "";
+
+	if (!Name.ToString().contains("Athena")) {
+		std::cout << "BeforeTierGroup: " << Name.ToString() << "\n";
+		Rizz = LootTierGroupModifcation(Name.ToString());
+
+		std::cout << "TierGroupAfter: " << Rizz << std::endl;
+	}
+	else {
+		Rizz = Name.ToString();
+	}
+
 	std::vector<FFortLootTierData*> AllLootTierData;
 	for (TPair<FName, uint8*> Map : LDataTable->RowMap) {
 		FFortLootTierData* LootTierData = (FFortLootTierData*)Map.Second;
-		if (LootTierData->TierGroup == Name && LootTierData->Weight != 0 && !LootTierData->LootPackage.ToString().contains("Empty")) {
+		if (LootTierData->TierGroup.ToString() == Rizz && !LootTierData->LootPackage.ToString().contains("Empty")) {
 			AllLootTierData.push_back(LootTierData);
 		}
 	}

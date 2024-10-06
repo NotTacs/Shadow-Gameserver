@@ -24,11 +24,13 @@ void TickFlushHook(UNetDriver* Driver)
         Sleep(1000);
     }
 
-    if (GetAsyncKeyState(VK_F3)) {
+    if (GetAsyncKeyState(VK_F3) && Driver) {
         
         auto GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
         auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
-
+        for (auto& CC : Driver->ClientConnections) {
+            GiveAccolade((AFortPlayerControllerAthena*)CC->PlayerController, StaticLoadObject<UFortAccoladeItemDefinition>("/Game/Athena/Items/Accolades/AccoladeId_014_Elimination_Bronze.AccoladeId_014_Elimination_Bronze"));
+        }
     }
 
     return TickFlushOG(Driver);
@@ -44,8 +46,9 @@ bool retfalse()
     return false;
 }
 
-void* (*DispatchRequestOG)(__int64, __int64, __int64);
-void* DispatchRequestHook(__int64 a1, __int64 a2, __int64 a3) {
+void* (*DispatchRequestOG)(UObject*, __int64, __int64);
+void* DispatchRequestHook(UMcpProfileGroup* a1, __int64 a2, __int64 a3) {
+    std::cout << "DispatchRequest: " << __int64(a1->VTable) - ImageBase << std::endl;
     return DispatchRequestOG(a1, a2, 3);
 }
 
@@ -64,7 +67,6 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
 }
 
 
-
 DWORD WINAPI Main(LPVOID)
 {
     AllocConsole();
@@ -75,7 +77,7 @@ DWORD WINAPI Main(LPVOID)
     Sleep(5000);
 
     GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"open Apollo_Terrain", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), bCreative ? L"open Creative_NoApollo_Terrain" : L"open Apollo_Terrain", nullptr);
 
 
     Hook(ImageBase + 0x4640A30, GameMode::ReadyToStartMatchHook, nullptr);
@@ -92,7 +94,9 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x29B5C80, ClientOnPawnDied, (void**)&ClientOnPawnDied_OG);
     Hook(ImageBase + 0x1F96650, CompletePickupAnimation, (void**)&CompletePickupAnimation_OG);
     Hook(ImageBase + 0x1A6D300, sub_1A6D300_Hook, (void**)&sub_1A6D300);
+    Hook(ImageBase + 0x1A91DC0, sub_1A91DC0_Hook, (void**)&sub_1A91DC0);
     Hook(ImageBase + 0x18FD350, SetZoneToIndex, (void**)&SetZoneToIndexOG);
+    //Hook(ImageBase + 0x230C210, SetHasFinishedLoading, (void**)&SetHasFinishedLoading_OG);
     //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
 
     
@@ -163,6 +167,8 @@ DWORD WINAPI Main(LPVOID)
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x235, ServerEndEditingBuildingActor, nullptr);
 
     VFTHook(AFortPlayerPawnAthena::GetDefaultObj()->VTable, 0x1EA, ServerHandlePickup, nullptr);
+
+    VFTHook(UFortControllerComponent_Interaction::GetDefaultObj()->VTable, 0x8B, ServerAttemptInteract, (void**)&ServerAttemptInteract_OG);
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);

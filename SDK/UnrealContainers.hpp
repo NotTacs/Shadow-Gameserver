@@ -308,6 +308,14 @@ namespace UC
 			return true;
 		}
 
+		inline bool Remove(ArrayElementType& Item) {
+			for (int i = 0; i < NumElements; i++) {
+				if (Data[i] == Item) {
+					Remove(i);
+				}
+			}
+		}
+
 		inline void Clear()
 		{
 			NumElements = 0;
@@ -350,9 +358,18 @@ namespace UC
 		{
 			const uint32 NullTerminatedLength = static_cast<uint32>(wcslen(Str) + 0x1);
 
+			
+
 			Data = const_cast<wchar_t*>(Str);
 			NumElements = NullTerminatedLength;
 			MaxElements = NullTerminatedLength;
+		}
+
+		FString(const std::string Str) {
+
+			Data = reinterpret_cast<wchar_t*>(*Str.c_str());
+			NumElements = Str.length();
+			MaxElements = Str.length();
 		}
 
 	public:

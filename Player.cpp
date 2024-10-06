@@ -69,12 +69,14 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	GameState->GameMemberInfoArray.Members.Add(MemberInfo);
 	GameState->GameMemberInfoArray.MarkItemDirty(MemberInfo);
 
+
 	std::cout << GameMode->NumTeams << std::endl;
 
 	Controller->XPComponent->bRegisteredWithQuestManager = true;
 	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
 
-	auto PS = (AFortPlayerStateAthena*)Controller->PlayerState;
+	PlayerState->SeasonLevelUIDisplay = Controller->XPComponent->CurrentLevel;
+	PlayerState->OnRep_SeasonLevelUIDisplay();
 
 	return ServerReadyToStartMatch_OG(Controller);
 }
@@ -113,6 +115,10 @@ AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid
 
 	if (!Definition) return nullptr;
 
+	if (!Controller) return nullptr;
+	
+	if (!Controller->MyFortPawn) return nullptr;
+
 	return Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
@@ -125,27 +131,51 @@ void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct 
 	return ServerAttemptInventoryDrop_OG(Controller, ItemGuid, Count, bTrash);
 }
 
-void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport) {
-	AFortPlayerPawnAthena* KillerPawn = (AFortPlayerPawnAthena*)DeathReport.KillerPawn;
-	AFortPlayerStateAthena* KillerPlayerState = (AFortPlayerStateAthena*)DeathReport.KillerPlayerState;
-	AFortPlayerStateAthena* DeadPlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
-	printf("ClientOnPawnDied");
-	if (DeathReport.ServerTimeForRespawn == 0 || DeathReport.ServerTimeForResurrect == 0) {
-		printf("Player Will Not Respawn");
-		if (Controller) {
-			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
-				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
+void ServerAttemptInteract(UFortControllerComponent_Interaction* Component, class AActor* ReceivingActor, class UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, class UObject* OptionalObjectData, EInteractionBeingAttempted InteractionBeingAttempted, int32 RequestId) {
+	auto PlayerController = (AFortPlayerControllerAthena*)Component->GetOwner();
 
+	std::cout << PlayerController->Class->GetFullName() << std::endl;
+
+	if (ReceivingActor->IsA(ABuildingContainer::StaticClass())) {
+		ABuildingContainer* Container = (ABuildingContainer*)ReceivingActor;
+		std::cout << "Container: " << Container->GetName() << std::endl;
+		std::cout << "Mesh: " << Container->StaticMeshComponent->StaticMesh->GetName() << std::endl;
+
+		if (Container->StaticMeshComponent->StaticMesh->GetName().contains("Loot_AmmoCase")) {
+			Container->SearchLootTierGroup = UKismetStringLibrary::Conv_StringToName(L"Loot_AthenaAmmoSmall");
+		}
+		auto Entrys = GetItems(Container->SearchLootTierGroup);
+
+		for (FFortItemEntry Entry : Entrys) {
+			Inventory::SpawnPickup(Entry.ItemDefinition, PlayerController->MyFortPawn->K2_GetActorLocation(), Entry.Count, EFortPickupSourceTypeFlag::Container, Container->GetName().contains("Chest") ? EFortPickupSpawnSource::Chest : EFortPickupSpawnSource::Unset);
+			auto T = (UFortWeaponRangedItemDefinition*)Entry.ItemDefinition;
+
+			if (T->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
+				auto AmmoDef = T->GetAmmoWorldItemDefinition_BP();
+
+				Inventory::SpawnPickup(T->GetAmmoWorldItemDefinition_BP(), PlayerController->MyFortPawn->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
 			}
 		}
+		Container->bAlreadySearched = true;
+		Container->OnRep_bAlreadySearched();
+		Container->SearchBounceData.SearchAnimationCount++;
+		Container->BounceContainer();
 	}
-	else {
-		if (Controller) {
-			for (UFortWorldItem* ItemInstance : Controller->WorldInventory->Inventory.ItemInstances) {
-				Inventory::SpawnPickup(ItemInstance->ItemEntry.ItemDefinition, DeadPlayerState->DeathInfo.DeathLocation, ItemInstance->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination);
-			}
-		}
+	if (ReceivingActor->GetName().contains("Quest")) {
+		std::cout << ReceivingActor->GetName() << std::endl;
 	}
+
+	return ServerAttemptInteract_OG(Component, ReceivingActor, InteractComponent, InteractType, OptionalObjectData, InteractionBeingAttempted, RequestId);
+}
+
+static void (*RemoveFromAlivePlayers)(AFortGameMode* GameMode, AFortPlayerController* PC, AFortPlayerState* State, AFortPawn* Pawn, UFortWeaponItemDefinition* Definition, EDeathCause Cause, char) = decltype(RemoveFromAlivePlayers)(ImageBase + 0x18ECBB0);
+
+void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport) {
+	if (!Controller) return ClientOnPawnDied_OG(Controller, DeathReport);
+
+	//RemoveFromAlivePlayers(GameMode, Controller, KillerPlayerState, KillerPawn, KillerPawn->CurrentWeapon ? KillerPawn->CurrentWeapon->WeaponData : nullptr, DeadPlayerState->ToDeathCause(DeathReport.Tags, DeadPlayerState->DeathInfo.bDBNO), 0);
+
+	printf("ClientOnPawnDied");
 
 	return ClientOnPawnDied_OG(Controller, DeathReport);
 }
@@ -218,8 +248,6 @@ void ServerHandlePickup(AFortPlayerPawnAthena* Pawn, AFortPickup* Pickup, float 
 	Pickup->bPickedUp = true;
 	Pickup->OnRep_bPickedUp();
 }
-
-
 
 char CompletePickupAnimation(AFortPickup* Pickup) {
 	auto PC = (AFortPlayerControllerAthena*)Pickup->PickupLocationData.PickupTarget->Controller;

@@ -2,6 +2,7 @@
 
 UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortItemDefinition* Definition, int Count, int Level, bool Stack, bool Pickup) {
 
+	if (!Definition) return nullptr;
 
 	UFortWorldItem* WorldItem = (UFortWorldItem*)Definition->CreateTemporaryItemInstanceBP(Count, Level);
 	WorldItem->SetOwningControllerForTemporaryItem(PC);
@@ -9,7 +10,7 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	WorldItem->ItemEntry.ItemDefinition = Definition;
 	WorldItem->ItemEntry.Count = Count;
 	WorldItem->ItemEntry.Level = Level;
-	WorldItem->ItemEntry.LoadedAmmo = 0;
+	WorldItem->ItemEntry.LoadedAmmo = Definition->IsA(UFortWeaponRangedItemDefinition::StaticClass()) ? GetClipSize(PC, (UFortWeaponRangedItemDefinition*)Definition) : 0;
 
 	if (Pickup) {
 		FFortItemEntryStateValue State{};
@@ -166,5 +167,14 @@ bool Inventory::ItemIsInInventory(AFortPlayerControllerAthena* PC, UFortItemDefi
 FFortItemEntry Inventory::GetEntry(AFortPlayerControllerAthena* PC, FGuid Guid) {
 	for (FFortItemEntry Entry : PC->WorldInventory->Inventory.ReplicatedEntries) {
 		if (Entry.ItemGuid == Guid) return Entry;
+	}
+}
+
+int Inventory::GetClipSize(AFortPlayerControllerAthena* PC, UFortWeaponRangedItemDefinition* Def) {
+	UDataTable* AthenaRangedWeapons = StaticLoadObject<UDataTable>("/Game/Athena/Items/Weapons/AthenaRangedWeapons.AthenaRangedWeapons");
+	for (TPair<FName, uint8*> Pair : AthenaRangedWeapons->RowMap) {
+		if (Pair.First == Def->WeaponStatHandle.RowName) {
+			return ((FFortRangedWeaponStats*)Pair.Second)->ClipSize;
+		}
 	}
 }

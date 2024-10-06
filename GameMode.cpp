@@ -10,7 +10,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DADBRO_Squads_12.Playlist_DADBRO_Squads_12");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -63,23 +63,47 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 		if (Playlist->AISettings) {
 			GameMode->AISettings = Playlist->AISettings;
+			auto System = (UAthenaAISystem*)GetWorld()->AISystem;
+			if (!System->BotManager) {
+				System->BotManager = (UFortBotMissionManager*)UGameplayStatics::SpawnObject(UFortBotMissionManager::StaticClass(), System);
+			}
+			else {
+				std::cout << System->BotManager->GetName() << std::endl;
+			}
+
+			if (!GameMode->AIDirector) {
+				GameMode->AIDirector = SpawnActor<AFortAIDirector>();
+				GameMode->AIDirector->Activate();
+			}
+			else {
+				std::cout << GameMode->AIDirector->GetName() << std::endl;
+			}
+			std::cout << System->RegisteredAISpawners.Num() << std::endl;
+			for (int i = 0; i < System->RegisteredAISpawners.Num();i++) {
+				AActor* Spawner = System->RegisteredAISpawners[i];
+				std::cout << "Spawner: " << Spawner->Class->GetName() << std::endl;
+			}
 		}
 		bPlaylist = true;
 	}
 
-	static bool bPlayerStartLcsLoaded = false;
-	if (!bPlayerStartLcsLoaded) {
-		TArray<AActor*> Actors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortPlayerStartWarmup::StaticClass(), &Actors);
-		int Num = Actors.Num();
-		Actors.Free();
-		if (Num == 0) {
-			return false;
+	if (!bCreative) {
+		static bool bPlayerStartLcsLoaded = false;
+		if (!bPlayerStartLcsLoaded) {
+			TArray<AActor*> Actors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortPlayerStartWarmup::StaticClass(), &Actors);
+			int Num = Actors.Num();
+			Actors.Free();
+			if (Num == 0) {
+				return false;
+			}
+			bPlayerStartLcsLoaded = true;
 		}
-		bPlayerStartLcsLoaded = true;
 	}
 
 	if (!GameState->MapInfo) return false;
+
+	if (GameState->Teams.Num() == 0) return false;
 
 	static bool bListening = false;
 	if (!bListening) {
@@ -177,7 +201,7 @@ inline EFortTeam GetNextEmptyTeam(int MaxTeamCount, int MaxSquadSize) {
 		for (int i = 3; i < Teams.Num(); i++) {
 			auto Team = Teams[i];
 			if (!Team.IsValid()) continue;
-			if (Team.Num() < MaxSquadSize && i <= (MaxTeamCount + 3)) return EFortTeam(i);
+			if (Team.Num() <= MaxSquadSize && i <= (MaxTeamCount + 3)) return EFortTeam(i);
 		}
 	}
 
@@ -214,6 +238,8 @@ EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferre
 
 	EFortTeam Ret = (bSpreadTeams ? (GetLowestTeam(MaxTeamCount, MaxSquadSize)) : (GetNextEmptyTeam(MaxTeamCount, MaxSquadSize)));
 
+	/*
+
 	if (PC->PlayerState) {
 		AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)PC->PlayerState;
 		PlayerState->SquadId = ((int)Ret - 3);
@@ -230,6 +256,7 @@ EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferre
 			GameState->GameMemberInfoArray.MarkArrayDirty();
 		}
 	}
+	*/
 
 	return Ret;
 }

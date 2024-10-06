@@ -19,6 +19,9 @@ AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid
 inline void (*ServerAttemptInventoryDrop_OG)(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
 
+inline void (*ServerAttemptInteract_OG)(UFortControllerComponent_Interaction* Component, class AActor* ReceivingActor, class UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, class UObject* OptionalObjectData, EInteractionBeingAttempted InteractionBeingAttempted, int32 RequestId);
+void ServerAttemptInteract(UFortControllerComponent_Interaction* Component, class AActor* ReceivingActor, class UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, class UObject* OptionalObjectData, EInteractionBeingAttempted InteractionBeingAttempted, int32 RequestId);
+
 inline void (*ClientOnPawnDied_OG)(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport);
 void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport);
 

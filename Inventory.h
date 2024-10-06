@@ -16,4 +16,6 @@ namespace Inventory
 	}
 
 	FFortItemEntry GetEntry(AFortPlayerControllerAthena* PC, FGuid Guid);
+
+	int GetClipSize(AFortPlayerControllerAthena* PC, UFortWeaponRangedItemDefinition* Def);
 }

@@ -60,9 +60,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	static UFortAthenaAIBotEvaluator* StressTag = (UFortAthenaAIBotEvaluator*)StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/AI/MANG/Evaluators/Mang_Evaluator_StressTag.Mang_Evaluator_StressTag_C");
 	static UFortAthenaAIBotEvaluator* PropagateAwareness = (UFortAthenaAIBotEvaluator*)StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/AI/MANG/Evaluators/MANG_Evaluator_PropagateAwareness.MANG_Evaluator_PropagateAwareness_C");
 
-	//std:: cout << InRuntimeBotData.PredefinedCosmeticSetTag.TagName.ToString() << std::endl;
-
-
 	if (InBotData->CharacterCustomization->CustomizationLoadout.Character->GetName() == "CID_556_Athena_Commando_F_RebirthDefaultA") {
 		UDataTable* Table = StaticLoadObject<UDataTable>("/Game/Athena/AI/MANG/Cosmetic/MANG_Cosmetic_Sets_Default.MANG_Cosmetic_Sets_Default");
 		if (Table) {
@@ -84,8 +81,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 		}
 	}
 
-	std::cout << "Character: " << InBotData->CharacterCustomization->CustomizationLoadout.Character->GetName() << std::endl;
-
 	AFortPlayerPawnAthena* Pawn = SpawnBot_OG(BotManager, InSpawnLocation, InSpawnRotation, InBotData, InRuntimeBotData);
 
 	Pawn->bCanBeDamaged = true;
@@ -93,7 +88,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	Pawn->SetHealth(Pawn->GetMaxHealth());
 
 	ABP_PhoebeController_NonParticipant_C* Controller = (ABP_PhoebeController_NonParticipant_C*)Pawn->Controller;
-	std::cout << "Class: " << Controller->Class->GetFullName() << std::endl;
 	AllBots(Pawn, Controller);
 	//Hardcoding time
 	if (DBNO) {
@@ -110,20 +104,20 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	}
 
 	if (Controller->Blackboard) {
-		
+
 	}
 
 	//Very Very HardCoded
 	Controller->CosmeticLoadoutBC = InBotData->CharacterCustomization->CustomizationLoadout;
 	Pawn->CosmeticLoadout = InBotData->CharacterCustomization->CustomizationLoadout;
 	Pawn->OnRep_CosmeticLoadout();
-	
+
 	AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
 	PlayerState->HeroType = Controller->CosmeticLoadoutBC.Character->HeroDefinition;
 
 	for (int i = 0; i < PlayerState->HeroType->Specializations.Num(); i++) {
 		TSoftObjectPtr<UFortHeroSpecialization> Specialization = PlayerState->HeroType->Specializations[i];
-		
+
 		UFortHeroSpecialization* Spec = Specialization.Get();
 		if (!Spec) {
 			Spec = StaticLoadObject<UFortHeroSpecialization>(
@@ -155,16 +149,21 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 
 			if (!Item)
 				continue;
-			std::cout << "Item: " << Item->GetFullName() << "\n";
-			GiveItem(Controller, Item,1, 0);
+			GiveItem(Controller, Item, 1, 0);
 			FName MiscItem = UKismetStringLibrary::Conv_StringToName(L"Weapon.Meta.MiscWrapped");
-			if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GameplayTags.GameplayTags[0].TagName != MiscItem )
+			if (Item->IsA(UFortGadgetItemDefinition::StaticClass()) && !Item->GetName().contains("KeyCard")) {
+				Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Item, GetGuid(Controller, Item));
+			}
+			if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GameplayTags.GameplayTags[0].TagName != MiscItem)
 			{
 				Pawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Item, GetGuid(Controller, Item));
 			}
 		}
 	}
 
+	
+	
+	std::cout << BotManager->BotFactions.Num() << std::endl;
 
 	//std::cout << Controller->BotPlayerName.ToString() << std::endl;
 	//GameMode->ChangeName(Controller, UKismetTextLibrary::Conv_TextToString(InBotData->BotNameSettings->OverrideName), true);

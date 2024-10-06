@@ -317,6 +317,7 @@ public:
 	int32                                         Number;                                            // 0x0004(0x0004)(NOT AUTO-GENERATED PROPERTY)
 
 public:
+
 	static void InitInternal()
 	{
 		AppendString = reinterpret_cast<void*>(InSDKUtils::GetImageBase() + Offsets::AppendString);
@@ -357,6 +358,8 @@ public:
 	
 		return OutputString.substr(pos + 1);
 	}
+
+
 	
 	bool operator==(const FName& Other) const
 	{
