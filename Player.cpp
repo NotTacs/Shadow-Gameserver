@@ -122,6 +122,23 @@ AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid
 	return Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Definition, ItemGuid);
 }
 
+void ServerClientIsReadyToRespawn(AFortPlayerControllerAthena* Controller) {
+	auto GameMode = (AFortGameModeAthena*)GetWorld()->AuthorityGameMode;
+	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+	auto PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
+
+	printf("ServerClientIsReadyToRespawn");
+	
+	if (PlayerState->RespawnData.bServerIsReady && PlayerState->RespawnData.bRespawnDataAvailable) {
+		PlayerState->RespawnData.bClientIsReady = true;
+		
+		printf("RestartingPlayer");
+		GameMode->RestartPlayer(Controller);
+	}
+
+	return ServerClientIsReadyToRespawn_OG(Controller);
+}
+
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash) {
 
 	std::cout << "Count: " << Count << std::endl;
@@ -172,8 +189,53 @@ static void (*RemoveFromAlivePlayers)(AFortGameMode* GameMode, AFortPlayerContro
 
 void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport) {
 	if (!Controller) return ClientOnPawnDied_OG(Controller, DeathReport);
+	AFortPlayerPawnAthena* KillerPawn = (AFortPlayerPawnAthena*)DeathReport.KillerPawn;
+	UFortWeaponItemDefinition* Weapon = DeathReport.KillerWeapon;
+	AFortPlayerStateAthena* PlayerState = (AFortPlayerStateAthena*)DeathReport.KillerPlayerState;
+	AFortPlayerControllerAthena* KillerController =  (DeathReport.KillerPawn) ? (AFortPlayerControllerAthena*)DeathReport.KillerPawn->Controller : nullptr;
+	AFortPlayerStateAthena* DeadState = (AFortPlayerStateAthena*)Controller->PlayerState;
+	AFortPlayerPawnAthena* DeadPawn = (AFortPlayerPawnAthena*)Controller->MyFortPawn;
+	AFortGameModeAthena* GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
+	AFortGameStateAthena* GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
 
-	//RemoveFromAlivePlayers(GameMode, Controller, KillerPlayerState, KillerPawn, KillerPawn->CurrentWeapon ? KillerPawn->CurrentWeapon->WeaponData : nullptr, DeadPlayerState->ToDeathCause(DeathReport.Tags, DeadPlayerState->DeathInfo.bDBNO), 0);
+	DeadState->DeathInfo.bDBNO = Controller->MyFortPawn->bWasDBNOOnDeath;
+	DeadState->DeathInfo.DeathLocation = Controller->MyFortPawn->K2_GetActorLocation();
+	DeadState->DeathInfo.DeathCause = DeadState->ToDeathCause(DeathReport.Tags, Controller->MyFortPawn->bWasDBNOOnDeath);
+	DeadState->DeathInfo.DeathTags = DeathReport.Tags;
+	DeadState->DeathInfo.Distance = KillerController ? Controller->GetDistanceTo(KillerController->MyFortPawn) : 0;
+	DeadState->DeathInfo.Downer = KillerPawn;
+	DeadState->DeathInfo.FinisherOrDowner = KillerPawn;
+	DeadState->DeathInfo.bInitialized = true;
+	DeadState->OnRep_DeathInfo();
+
+	for (UFortWorldItem* Item : Controller->WorldInventory->Inventory.ItemInstances) {
+		if (Item->ItemEntry.ItemDefinition->IsA(UFortWeaponRangedItemDefinition::StaticClass())
+			|| Item->ItemEntry.ItemDefinition->IsA(UFortResourceItemDefinition::StaticClass())
+			|| Item->ItemEntry.ItemDefinition->IsA(UFortAmmoItemDefinition::StaticClass()))
+		{
+			Inventory::SpawnPickup(Item->ItemEntry.ItemDefinition, DeadState->DeathInfo.DeathLocation, Item->ItemEntry.Count, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, KillerPawn);
+		}
+	}
+
+	for (int i = 0; i < Controller->WorldInventory->Inventory.ItemInstances.Num(); i++) {
+		Controller->WorldInventory->Inventory.ItemInstances.Remove(i);
+		Controller->WorldInventory->bRequiresLocalUpdate = true;
+		Controller->WorldInventory->HandleInventoryLocalUpdate();
+		Controller->WorldInventory->Inventory.MarkArrayDirty();
+	}
+
+	for (int i = 0; i < Controller->WorldInventory->Inventory.ReplicatedEntries.Num(); i++) {
+		Controller->WorldInventory->Inventory.ReplicatedEntries.Remove(i);
+		Controller->WorldInventory->bRequiresLocalUpdate = true;
+		Controller->WorldInventory->HandleInventoryLocalUpdate();
+		Controller->WorldInventory->Inventory.MarkArrayDirty();
+	}
+
+	std::cout << DeathReport.ServerTimeForRespawn << std::endl;
+	std::cout << DeathReport.ServerTimeForResurrect << std::endl;
+
+	if (DeathReport.ServerTimeForRespawn != 0 || DeathReport.ServerTimeForResurrect != 0) {
+	}
 
 	printf("ClientOnPawnDied");
 

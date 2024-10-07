@@ -58,8 +58,8 @@ void PE_Hook(UObject* Object, UFunction* Function, void* Params) {
     if (Object && Function) {
         std::string FuncName = Function->GetName();
         std::string ObjectClassName = Object->Class->GetName();
-        if (Object->Class == AFortPlayerControllerZone::StaticClass()) {
-            std::cout << "FuncName: " << Function->GetFullName() << std::endl;
+        if (FuncName.contains("Respawn") || FuncName.contains("Resurrect")) {
+            std::cout << "FuncName: " << Function->GetName() << std::endl;
         }
     }
 
@@ -169,6 +169,8 @@ DWORD WINAPI Main(LPVOID)
     VFTHook(AFortPlayerPawnAthena::GetDefaultObj()->VTable, 0x1EA, ServerHandlePickup, nullptr);
 
     VFTHook(UFortControllerComponent_Interaction::GetDefaultObj()->VTable, 0x8B, ServerAttemptInteract, (void**)&ServerAttemptInteract_OG);
+
+    VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x4F0, ServerClientIsReadyToRespawn, (void**)&ServerClientIsReadyToRespawn_OG);
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);

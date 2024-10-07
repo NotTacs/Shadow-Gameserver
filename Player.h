@@ -16,6 +16,9 @@ char CompletePickupAnimation(AFortPickup* Pickup);
 
 AFortWeapon* ServerExecuteInventoryItem(AFortPlayerController* Controller, FGuid ItemGuid);
 
+inline void (*ServerClientIsReadyToRespawn_OG)(AFortPlayerControllerAthena* Controller);
+void ServerClientIsReadyToRespawn(AFortPlayerControllerAthena* Controller);
+
 inline void (*ServerAttemptInventoryDrop_OG)(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
 void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
 
