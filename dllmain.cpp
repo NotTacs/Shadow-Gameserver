@@ -24,7 +24,7 @@ void TickFlushHook(UNetDriver* Driver)
         Sleep(1000);
     }
 
-    if (GetAsyncKeyState(VK_F3) && Driver) {
+    if (GetAsyncKeyState(VK_F3)) {
         
         auto GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
         auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;

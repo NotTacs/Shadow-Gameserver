@@ -7,54 +7,6 @@
 void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 
-	static bool bFirst = false;
-	if (!bFirst) {
-		TArray<AActor*> Actors;
-		TArray<AActor*> ActorsAgain;
-		static UClass* Tiered_Athena_FloorLoot_Warmup = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
-		static UClass* Tiered_Athena_FloorLoot = StaticLoadObject<UBlueprintGeneratedClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C");
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot_Warmup, &Actors);
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), Tiered_Athena_FloorLoot, &ActorsAgain);
-
-		for (int i = 0; i < Actors.Num(); i++) {
-			auto Container = (ABuildingContainer*)Actors[i];
-			auto TierGroup = GetItems(Container->SearchLootTierGroup);
-			for (auto& Item : TierGroup) {
-				Inventory::SpawnPickup(Item.ItemDefinition, Container->K2_GetActorLocation(), Item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
-
-				auto T = (UFortWeaponRangedItemDefinition*)Item.ItemDefinition;
-
-				if (((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
-					auto AmmoDef = ((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP();
-
-					Inventory::SpawnPickup(((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP(), Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
-				}
-			}
-			Container->K2_DestroyActor();
-		}
-
-		for (int i = 0; i < ActorsAgain.Num(); i++) {
-			auto Container = (ABuildingContainer*)ActorsAgain[i];
-			auto TierGroup = GetItems(Container->SearchLootTierGroup);
-			for (auto& Item : TierGroup) {
-				Inventory::SpawnPickup(Item.ItemDefinition, Container->K2_GetActorLocation(), Item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
-				auto T = (UFortWeaponRangedItemDefinition*)Item.ItemDefinition;
-
-				if (((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
-					auto AmmoDef = ((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP();
-					
-					Inventory::SpawnPickup(((UFortWeaponRangedItemDefinition*)Item.ItemDefinition)->GetAmmoWorldItemDefinition_BP(), Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
-				}
-			}
-			Container->K2_DestroyActor();
-		}
-
-		Actors.Free();
-		ActorsAgain.Free();
-
-		bFirst = true;
-	}
-
 	auto PlayerState = (AFortPlayerStateAthena*)Controller->PlayerState;
 	auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
 
@@ -157,22 +109,8 @@ void ServerAttemptInteract(UFortControllerComponent_Interaction* Component, clas
 		ABuildingContainer* Container = (ABuildingContainer*)ReceivingActor;
 		std::cout << "Container: " << Container->GetName() << std::endl;
 		std::cout << "Mesh: " << Container->StaticMeshComponent->StaticMesh->GetName() << std::endl;
+		std::cout << "ContainerSearchLootTierGroup: " << Container->SearchLootTierGroup.ToString() << std::endl;
 
-		if (Container->StaticMeshComponent->StaticMesh->GetName().contains("Loot_AmmoCase")) {
-			Container->SearchLootTierGroup = UKismetStringLibrary::Conv_StringToName(L"Loot_AthenaAmmoSmall");
-		}
-		auto Entrys = GetItems(Container->SearchLootTierGroup);
-
-		for (FFortItemEntry Entry : Entrys) {
-			Inventory::SpawnPickup(Entry.ItemDefinition, PlayerController->MyFortPawn->K2_GetActorLocation(), Entry.Count, EFortPickupSourceTypeFlag::Container, Container->GetName().contains("Chest") ? EFortPickupSpawnSource::Chest : EFortPickupSpawnSource::Unset);
-			auto T = (UFortWeaponRangedItemDefinition*)Entry.ItemDefinition;
-
-			if (T->GetAmmoWorldItemDefinition_BP() && T->AmmoData.Get() != T) {
-				auto AmmoDef = T->GetAmmoWorldItemDefinition_BP();
-
-				Inventory::SpawnPickup(T->GetAmmoWorldItemDefinition_BP(), PlayerController->MyFortPawn->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
-			}
-		}
 		Container->bAlreadySearched = true;
 		Container->OnRep_bAlreadySearched();
 		Container->SearchBounceData.SearchAnimationCount++;

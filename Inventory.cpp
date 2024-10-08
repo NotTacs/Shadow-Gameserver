@@ -12,13 +12,6 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	WorldItem->ItemEntry.Level = Level;
 	WorldItem->ItemEntry.LoadedAmmo = Definition->IsA(UFortWeaponRangedItemDefinition::StaticClass()) ? GetClipSize(PC, (UFortWeaponRangedItemDefinition*)Definition) : 0;
 
-	if (Pickup) {
-		FFortItemEntryStateValue State{};
-		State.IntValue = 1;
-		State.StateType = EFortItemEntryState::ShouldShowItemToast;
-		WorldItem->ItemEntry.StateValues.Add(State);
-	}
-
 
 	if (Stack) {
 		for (int i = 0; i < PC->WorldInventory->Inventory.ReplicatedEntries.Num(); i++) {

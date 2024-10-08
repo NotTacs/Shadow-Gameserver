@@ -63,6 +63,8 @@ FFortLootPackageData* GetChosenLootTierDataP(std::vector<FFortLootPackageData*> 
 	return nullptr; //Gay Sex if happen
 }
 
+
+//ToDo: Rewrite this fucking ass shit
 std::vector<FFortItemEntry> GetItems(FName Name) {
 	std::vector<FFortItemEntry> LootDrops;
 
@@ -71,6 +73,7 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 	std::string Test = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootTierData.ObjectID.AssetPathName).ToString();
 	std::string Test2 = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootPackages.ObjectID.AssetPathName).ToString();
 	if (Test.empty() || Test.contains("None")) {
+		printf("Test");
 		LDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootTierData_Client.AthenaLootTierData_Client");
 		PDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootPackages_Client.AthenaLootPackages_Client");
 	}
@@ -98,12 +101,33 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 	std::vector<FFortLootTierData*> AllLootTierData;
 	for (TPair<FName, uint8*> Map : LDataTable->RowMap) {
 		FFortLootTierData* LootTierData = (FFortLootTierData*)Map.Second;
-		if (LootTierData->TierGroup.ToString() == Rizz && !LootTierData->LootPackage.ToString().contains("Empty")) {
+		if (LootTierData->TierGroup.ToString() == Rizz && !LootTierData->LootPackage.ToString().contains("Empty") && LootTierData->Weight != 0) {
 			AllLootTierData.push_back(LootTierData);
 		}
 	}
 
 	FFortLootTierData* ChosenLootTierData = GetChosenLootTierData(AllLootTierData);
+
+	if (!ChosenLootTierData) return LootDrops;
+
+	int TLPCWA = 0;
+	int TLPMA = 0;
+
+	for (int Vhat = 0; Vhat < ChosenLootTierData->LootPackageCategoryWeightArray.Num(); Vhat++) {
+		if (ChosenLootTierData->LootPackageCategoryWeightArray[Vhat] > 0) {
+			if (ChosenLootTierData->LootPackageCategoryMaxArray[Vhat] < 0)
+				TLPCWA += ChosenLootTierData->LootPackageCategoryWeightArray[Vhat];
+		}
+	}
+
+	for (int Vhat2 = 0; Vhat2 < ChosenLootTierData->LootPackageCategoryMinArray.Num(); Vhat2++) {
+		if (ChosenLootTierData->LootPackageCategoryMinArray[Vhat2] > 0) {
+			if (ChosenLootTierData->LootPackageCategoryMaxArray[Vhat2] < 0)
+				TLPMA += ChosenLootTierData->LootPackageCategoryWeightArray[Vhat2];
+		}
+	}
+
+	if (TLPCWA > TLPMA) return GetItems(Name);
 
 	std::vector<FFortLootPackageData*> AllLootPackageData;
 	for (TPair<FName, uint8*> Map : PDataTable->RowMap) {
