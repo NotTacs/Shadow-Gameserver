@@ -24,6 +24,8 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	std::cout << GameMode->NumTeams << std::endl;
 
+	std::cout << "Teams: " << GameState->Teams.Num() << std::endl;
+
 	Controller->XPComponent->bRegisteredWithQuestManager = true;
 	Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
 
@@ -123,7 +125,7 @@ void ServerAttemptInteract(UFortControllerComponent_Interaction* Component, clas
 	return ServerAttemptInteract_OG(Component, ReceivingActor, InteractComponent, InteractType, OptionalObjectData, InteractionBeingAttempted, RequestId);
 }
 
-static void (*RemoveFromAlivePlayers)(AFortGameMode* GameMode, AFortPlayerController* PC, AFortPlayerState* State, AFortPawn* Pawn, UFortWeaponItemDefinition* Definition, EDeathCause Cause, char) = decltype(RemoveFromAlivePlayers)(ImageBase + 0x18ECBB0);
+static void (*RemoveFromAlivePlayers)(AFortGameMode* GameMode, AFortPlayerController* DeadPC, AFortPlayerState* KillerState, AFortPawn* KillerPawn, UFortWeaponItemDefinition* KillerWaponDefinition, EDeathCause DeathCause, char) = decltype(RemoveFromAlivePlayers)(ImageBase + 0x18ECBB0);
 
 void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFortPlayerDeathReport& DeathReport) {
 	if (!Controller) return ClientOnPawnDied_OG(Controller, DeathReport);
@@ -135,6 +137,8 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 	AFortPlayerPawnAthena* DeadPawn = (AFortPlayerPawnAthena*)Controller->MyFortPawn;
 	AFortGameModeAthena* GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 	AFortGameStateAthena* GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
+
+	bool bKilledHimself = DeadState == PlayerState || KillerController == Controller;
 
 	DeadState->DeathInfo.bDBNO = Controller->MyFortPawn->bWasDBNOOnDeath;
 	DeadState->DeathInfo.DeathLocation = Controller->MyFortPawn->K2_GetActorLocation();
@@ -173,6 +177,17 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 	std::cout << DeathReport.ServerTimeForResurrect << std::endl;
 
 	if (DeathReport.ServerTimeForRespawn != 0 || DeathReport.ServerTimeForResurrect != 0) {
+	}
+
+	RemoveFromAlivePlayers(GameMode, Controller, bKilledHimself ? nullptr : PlayerState, bKilledHimself ? nullptr : KillerPawn, Weapon ? Weapon : nullptr, DeadState->DeathInfo.DeathCause, 0);
+
+	if (!bKilledHimself && KillerController) {
+		PlayerState->KillScore++;
+		PlayerState->OnRep_Kills();
+		PlayerState->TeamKillScore++;
+		PlayerState->OnRep_TeamKillScore();
+		PlayerState->ClientReportKill(DeadState);
+		PlayerState->ClientReportTeamKill(PlayerState->TeamKillScore);
 	}
 
 	printf("ClientOnPawnDied");
