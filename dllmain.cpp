@@ -33,6 +33,16 @@ void TickFlushHook(UNetDriver* Driver)
         }
     }
 
+    if (GetAsyncKeyState(VK_F1)) {
+        auto JerkyLoader = UObject::FindObject<UObject>("BP_Jerky_Loader_C JerkyLoaderLevel.JerkyLoaderLevel.PersistentLevel.BP_Jerky_Loader_2");
+        if (JerkyLoader) {
+            auto StartEvent = JerkyLoader->Class->GetFunction("BP_Jerky_Loader_C", "startevent");
+            float ermwhatthesigma = 0.f;
+            JerkyLoader->ProcessEvent(StartEvent, &ermwhatthesigma);
+        }
+        Sleep(2000);
+    }
+
     return TickFlushOG(Driver);
 }
 

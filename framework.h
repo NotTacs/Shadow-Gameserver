@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include "SDK/SDK.hpp"
 using namespace SDK;

@@ -1,6 +1,7 @@
 #include "GameMode.h"
 #include "Inventory.h"
 #include "Looting.h"
+#include "Events.h"
 
 bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 {
@@ -10,7 +11,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Music_High.Playlist_Music_High");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -154,6 +155,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		GameState->OnRep_CurrentPlaylistId();
 		SetConsoleTitleA("Listening");
 
+		JerkyLoader::GetAllJerkyObjects();
 		bListening = true;
 	}
 
