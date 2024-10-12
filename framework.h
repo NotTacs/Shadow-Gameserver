@@ -178,9 +178,33 @@ public:
 
 inline __int64 (*GameStateShit)() = decltype(GameStateShit)(ImageBase + 0x2857EC0);
 
+static FVector SZLOC;
+
+inline bool bLateGame = false;
+
+inline void DumpAllMetalCards() {
+    
+}
+
 inline void (*SetZoneToIndexOG)(AFortGameModeAthena* GameMode, int a2);
 inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
     printf("SetZoneToIndexCalled \n");
+
+    if (bLateGame) {
+        if (auto Indicator = GameMode->SafeZoneIndicator) {
+            std::cout << "SafeZoneLocations: " << GameMode->SafeZoneLocations.Num();
+
+            int FirstZoneLoc = 10000;
+            int SecondZoneLoc = 5000;
+            int ThirdZoneLoc = 2500;
+            int FourthZoneLoc = 1250;
+            int FifthZoneloc = 625;
+            int SixthZoneLoc = 312.5;
+            int SevenZoneLoc = 156.25;
+        }
+    }
+
+    
 
     return SetZoneToIndexOG(GameMode, a2);
 }
@@ -263,12 +287,23 @@ inline float GetRewardAmount(UFortAccoladeItemDefinition* Def) {
     return FindCurveTable(Def->XpRewardAmount.Curve.CurveTable, Def->XpRewardAmount.Curve.RowName);
 }
 
+inline void GiveMedal(AFortPlayerControllerAthena* Controller) {
+    
+}
+
 inline void GiveAccolade(AFortPlayerControllerAthena* Controller, UFortAccoladeItemDefinition* Def) {
     FAthenaAccolades Accolades{};
     Accolades.AccoladeDef = Def;
     Accolades.Count = 1;
     Accolades.TemplateId = Def->GetName();
     Controller->XPComponent->PlayerAccolades.Add(Accolades);
+    Controller->XPComponent->MedalsEarned.Add(Def);
+    FCardSlotMedalData MD{};
+    MD.AccoladeForSlot = Def;
+    MD.bLoadedFromMcp = false;
+    MD.bPunched = true;
+    MD.SlotIndex = 0;
+    Controller->XPComponent->LocalPunchCardMedals.Add(MD);
     //Controller->XPComponent->ClientMedalsRecived(Controller->XPComponent->PlayerAccolades);
     FXPEventInfo Info{};
     Info.Accolade = UKismetSystemLibrary::GetPrimaryAssetIdFromObject(Def);

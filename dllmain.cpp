@@ -35,11 +35,14 @@ void TickFlushHook(UNetDriver* Driver)
 
     if (GetAsyncKeyState(VK_F1)) {
         auto JerkyLoader = UObject::FindObject<UObject>("BP_Jerky_Loader_C JerkyLoaderLevel.JerkyLoaderLevel.PersistentLevel.BP_Jerky_Loader_2");
+        auto JerkyCountDown = UObject::FindObject<UObject>("BP_Countdown_Child_Jerky_C Apollo_POI_Foundations.Apollo_POI_Foundations.PersistentLevel.BP_Countdown_Child_Jerky_2");
+
+        
         if (JerkyLoader) {
             auto StartEvent = JerkyLoader->Class->GetFunction("BP_Jerky_Loader_C", "startevent");
             float ermwhatthesigma = 0.f;
             JerkyLoader->ProcessEvent(StartEvent, &ermwhatthesigma);
-        }
+        } 
         Sleep(2000);
     }
 
@@ -106,6 +109,7 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x1A6D300, sub_1A6D300_Hook, (void**)&sub_1A6D300);
     Hook(ImageBase + 0x1A91DC0, sub_1A91DC0_Hook, (void**)&sub_1A91DC0);
     Hook(ImageBase + 0x18FD350, SetZoneToIndex, (void**)&SetZoneToIndexOG);
+    Hook(ImageBase + 0x18E0730, GameMode::OnAircraftEnteredDropZone, (void**)&GameMode::OnAircraftEnteredDropZone_OG);
     //Hook(ImageBase + 0x230C210, SetHasFinishedLoading, (void**)&SetHasFinishedLoading_OG);
     //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
 

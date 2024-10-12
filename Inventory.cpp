@@ -12,7 +12,6 @@ UFortWorldItem* Inventory::GiveWorldItem(AFortPlayerControllerAthena* PC, UFortI
 	WorldItem->ItemEntry.Level = Level;
 	WorldItem->ItemEntry.LoadedAmmo = Definition->IsA(UFortWeaponRangedItemDefinition::StaticClass()) ? GetClipSize(PC, (UFortWeaponRangedItemDefinition*)Definition) : 0;
 
-
 	if (Stack) {
 		for (int i = 0; i < PC->WorldInventory->Inventory.ReplicatedEntries.Num(); i++) {
 			auto Entry = PC->WorldInventory->Inventory.ReplicatedEntries[i];

@@ -11,7 +11,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Music_High.Playlist_Music_High");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -261,4 +261,27 @@ EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferre
 	*/
 
 	return Ret;
+}
+
+void GameMode::OnAircraftEnteredDropZone(AFortGameModeAthena* GM, AFortAthenaAircraft* Aircraft) {
+	auto GameState = (AFortGameStateAthena*)GM->GameState;
+
+	if (bLateGame) {
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingFoundation::StaticClass(), &Actors);
+		AActor* Poi = Actors[rand() % Actors.Num()];
+
+		SZLOC = FVector(Poi->K2_GetActorLocation() + FVector(0, 0, 10000));
+		Aircraft->FlightEndTime = 100.f;
+		Aircraft->FlightInfo.FlightSpeed = 1.0f;
+		Aircraft->FlightInfo.FlightStartLocation = (FVector_NetQuantize100)SZLOC;
+		Aircraft->FlightEndTime = 0.f;
+		GameState->OnRep_Aircraft();
+
+		GameState->GamePhase = EAthenaGamePhase::SafeZones;
+		GameState->OnRep_GamePhase(EAthenaGamePhase::Aircraft);
+		GameState->SafeZonesStartTime = 1;
+	}
+
+	return OnAircraftEnteredDropZone_OG(GM, Aircraft);
 }

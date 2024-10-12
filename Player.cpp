@@ -3,6 +3,7 @@
 #include "SDK/SDK/FortniteGame_parameters.hpp"
 #include "Inventory.h"
 #include "Looting.h"
+#include "Lategame.h"
 
 void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
@@ -20,9 +21,6 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 	GameState->GameMemberInfoArray.Members.Add(MemberInfo);
 	GameState->GameMemberInfoArray.MarkItemDirty(MemberInfo);
-
-
-	std::cout << GameMode->NumTeams << std::endl;
 
 	std::cout << "Teams: " << GameState->Teams.Num() << std::endl;
 
