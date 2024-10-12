@@ -186,6 +186,9 @@ void ClientOnPawnDied(AFortPlayerControllerAthena* Controller, const struct FFor
 		PlayerState->OnRep_TeamKillScore();
 		PlayerState->ClientReportKill(DeadState);
 		PlayerState->ClientReportTeamKill(PlayerState->TeamKillScore);
+
+		
+		Controller->SpectateOnDeath();
 	}
 
 	printf("ClientOnPawnDied");

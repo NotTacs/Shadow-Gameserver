@@ -1,66 +1,71 @@
 #include "Looting.h"
 #include <random>
 
-std::vector<double> GetCumlativeWeights(std::vector<FFortLootTierData*> LootTiers) {
-	std::vector<double> cumulativeWeights;
-	double totalweight = 0.0;
-	for (FFortLootTierData* Tier : LootTiers) {
-		totalweight += Tier->Weight;
-		cumulativeWeights.push_back(totalweight);
+float GetCumlativeWeights(std::vector<FFortLootTierData*>& LootTiers) {
+
+	float TotalWeight = 0;
+
+	for (auto Item : LootTiers) {
+		TotalWeight += Item->Weight;
 	}
 
-	return cumulativeWeights;
+	return TotalWeight;
 }
 
-FFortLootTierData* GetChosenLootTierData(std::vector<FFortLootTierData*> LootTiers) {
+FFortLootTierData* GetChosenLootTierData(std::vector<FFortLootTierData*>& LootTiers) {
+	FFortLootTierData* Data = nullptr;
 	if (LootTiers.size() != 0) {
-		auto CumWeights = GetCumlativeWeights(LootTiers);
-		std::random_device RD;
-		std::mt19937 putyourseedinmyass(RD());
-		std::uniform_real_distribution<> dis(0.0, CumWeights.back());
+		float CumlativeWeights = GetCumlativeWeights(LootTiers);
 
-		double grape = dis(putyourseedinmyass);
+		if (CumlativeWeights == 0) {
+			printf("Weights are gay???");
+		}
 
-		for (size_t PDiddy = 0; PDiddy < CumWeights.size(); ++PDiddy) {
-			if (grape < CumWeights[PDiddy]) {
-				return LootTiers[PDiddy];
+		float WeightToUse = UKismetMathLibrary::GetDefaultObj()->RandomFloatInRange(0, CumlativeWeights);
+
+		for (auto Item : LootTiers) {
+			if (WeightToUse <= Item->Weight) {
+				Data = Item;
+				break;
 			}
+
+			WeightToUse -= Item->Weight;
 		}
 	}
 
 
-	return nullptr; //Gay Sex if happen
+	return Data; //Gay Sex if happen
 }
 
-std::vector<double> GetCumlativeWeightsP(std::vector<FFortLootPackageData*> LootPackages) {
-	std::vector<double> cumulativeWeights;
-	double totalweight = 0.0;
-	for (FFortLootPackageData* Tier : LootPackages) {
-		totalweight += Tier->Weight;
-		cumulativeWeights.push_back(totalweight);
+float GetCumlativeWeightsP(std::vector<FFortLootPackageData*> LootPackages) {
+	float cumulativeWeights = 0;
+
+	for (auto& Item : LootPackages) {
+		cumulativeWeights += Item->Weight;
 	}
 
 	return cumulativeWeights;
 }
 
-FFortLootPackageData* GetChosenLootTierDataP(std::vector<FFortLootPackageData*> LootTiers) {
-	if (LootTiers.size() != 0) {
-		auto CumWeights = GetCumlativeWeightsP(LootTiers);
-		std::random_device RD;
-		std::mt19937 putyourseedinmyass(RD());
-		std::uniform_real_distribution<> dis(0.0, CumWeights.back());
+FFortLootPackageData* GetChosenLootTierDataP(std::vector<FFortLootPackageData*> LootPackages) {
+	FFortLootPackageData* PackageData = nullptr;
+	if (LootPackages.size() != 0) {
+		float TotalWeights = GetCumlativeWeightsP(LootPackages);
 
-		double grape = dis(putyourseedinmyass);
+		float WeightToUse = UKismetMathLibrary::GetDefaultObj()->RandomFloatInRange(0, TotalWeights);
 
-		for (size_t PDiddy = 0; PDiddy < CumWeights.size(); ++PDiddy) {
-			if (grape < CumWeights[PDiddy]) {
-				return LootTiers[PDiddy];
+		for (auto& Package : LootPackages) {
+			if (WeightToUse <= Package->Weight) {
+				PackageData = Package;
+				break;
 			}
+
+			WeightToUse -= Package->Weight;
 		}
 	}
 	
 
-	return nullptr; //Gay Sex if happen
+	return PackageData; //Gay Sex if happen
 }
 
 
@@ -73,7 +78,6 @@ std::vector<FFortItemEntry> GetItems(FName Name) {
 	std::string Test = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootTierData.ObjectID.AssetPathName).ToString();
 	std::string Test2 = UKismetStringLibrary::Conv_NameToString(CurrentPlaylist()->LootPackages.ObjectID.AssetPathName).ToString();
 	if (Test.empty() || Test.contains("None")) {
-		printf("Test");
 		LDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootTierData_Client.AthenaLootTierData_Client");
 		PDataTable = StaticLoadObject<UDataTable>("/Game/Items/Datatables/AthenaLootPackages_Client.AthenaLootPackages_Client");
 	}

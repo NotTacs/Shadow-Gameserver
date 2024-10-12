@@ -11,7 +11,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_SolidGold_Solo.Playlist_SolidGold_Solo");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -156,6 +156,55 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		SetConsoleTitleA("Listening");
 
 		JerkyLoader::GetAllJerkyObjects();
+
+		TArray<AActor*> WarmupActors;
+		static UClass* WarmupClass = StaticLoadObject<UClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C");
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), WarmupClass, &WarmupActors);
+
+		for (int i = 0; i < WarmupActors.Num(); i++) {
+			auto Container = (ABuildingContainer*)WarmupActors[i];
+			auto Entrys = GetItems(Container->SearchLootTierGroup);
+			Container->K2_GetActorLocation().Z + 50;
+			for (auto& item : Entrys) {
+				Inventory::SpawnPickup(item.ItemDefinition, Container->K2_GetActorLocation(), item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+
+				UFortWeaponRangedItemDefinition* Item = (UFortWeaponRangedItemDefinition*)item.ItemDefinition;
+
+				if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GetAmmoWorldItemDefinition_BP() && Item->AmmoData.Get() != Item) {
+					auto AmmoDef = Item->GetAmmoWorldItemDefinition_BP();
+
+					Inventory::SpawnPickup(AmmoDef, Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::Container, EFortPickupSpawnSource::Unset);
+				}
+			}
+			Container->K2_DestroyActor();
+		}
+
+		WarmupActors.Free();
+
+		TArray<AActor*> FloorLootActors;
+		static UClass* FloorlootClass = StaticLoadObject<UClass>("/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C");
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), FloorlootClass, &FloorLootActors);
+
+		for (int i = 0; i < FloorLootActors.Num(); i++) {
+			auto Container = (ABuildingContainer*)FloorLootActors[i];
+			auto Entrys = GetItems(Container->SearchLootTierGroup);
+			Container->K2_GetActorLocation().Z + 50;
+
+			for (auto& item : Entrys) {
+				Inventory::SpawnPickup(item.ItemDefinition, Container->K2_GetActorLocation(), item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+
+				UFortWeaponRangedItemDefinition* Item = (UFortWeaponRangedItemDefinition*)item.ItemDefinition;
+
+				if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GetAmmoWorldItemDefinition_BP() && Item->AmmoData.Get() != Item) {
+					auto AmmoDef = Item->GetAmmoWorldItemDefinition_BP();
+
+					Inventory::SpawnPickup(AmmoDef, Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::Container, EFortPickupSpawnSource::Unset);
+				}
+			}
+			Container->K2_DestroyActor();
+		}
+		FloorLootActors.Free();
+
 		bListening = true;
 	}
 
