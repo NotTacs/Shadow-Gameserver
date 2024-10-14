@@ -178,9 +178,9 @@ public:
 
 inline __int64 (*GameStateShit)() = decltype(GameStateShit)(ImageBase + 0x2857EC0);
 
-static FVector SZLOC;
+static FVector ZoneLoc;
 
-inline bool bLateGame = false;
+inline bool bLateGame = true;
 
 inline void DumpAllMetalCards() {
     
@@ -193,20 +193,23 @@ inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
     printf("SetZoneToIndexCalled \n");
     static int LateGamePhase = 2;
 
-    static FVector ZoneLoc = GameMode->SafeZoneLocations[4];
-    Indicator->NextCenter.X = ZoneLoc.X;
-    Indicator->NextCenter.Y = ZoneLoc.Y;
-    Indicator->NextCenter.Z = ZoneLoc.Z;
-
-    std::cout << "NextCenter: ("
-        << Indicator->NextCenter.X << ", "
-        << Indicator->NextCenter.Y << ", "
-        << Indicator->NextCenter.Z << ")" << std::endl;
-
-    static FVector_NetQuantize100 ZoneLocQuan = FVector_NetQuantize100{ ZoneLoc.X, ZoneLoc.Y, ZoneLoc.Z };
+    
 
     if (bLateGame)
     {
+
+        ZoneLoc = GameMode->SafeZoneLocations[4];
+        Indicator->NextCenter.X = ZoneLoc.X;
+        Indicator->NextCenter.Y = ZoneLoc.Y;
+        Indicator->NextCenter.Z = ZoneLoc.Z;
+
+        std::cout << "NextCenter: ("
+            << Indicator->NextCenter.X << ", "
+            << Indicator->NextCenter.Y << ", "
+            << Indicator->NextCenter.Z << ")" << std::endl;
+
+        static FVector_NetQuantize100 ZoneLocQuan = FVector_NetQuantize100{ ZoneLoc.X, ZoneLoc.Y, ZoneLoc.Z };
+
         SetZoneToIndexOG(GameMode, a2);
 
         if (LateGamePhase == 2 || LateGamePhase == 3)

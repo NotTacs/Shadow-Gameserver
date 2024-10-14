@@ -45,12 +45,28 @@ void ServerAcknowledgePossesion(AFortPlayerController* Controller, APawn* Pawn) 
 	UFortKismetLibrary::GetDefaultObj()->UpdatePlayerCustomCharacterPartsVisualization(PlayerState);
 }
 
+
+
 void ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Component, FRotator ClientRotation) {
 	std::cout << Component->GetOwner()->Class->GetName() << std::endl;
 	AFortGameModeAthena* GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 	AFortGameStateAthena* GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
 	AFortPlayerControllerAthena* PlayerController = reinterpret_cast<AFortPlayerControllerAthena*>(Component->GetOwner());
+
+	for (int i = 0; i < PlayerController->WorldInventory->Inventory.ItemInstances.Num(); i++) {
+		auto& ItemInstance = PlayerController->WorldInventory->Inventory.ItemInstances[i];
+		PlayerController->WorldInventory->Inventory.ItemInstances.Remove(i);
+	}
+	for (int i = 0; i < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); i++) {
+		auto& ReplicateEntry = PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
+		PlayerController->WorldInventory->Inventory.ReplicatedEntries.Remove(i);
+	}
+
+
 	if (PlayerController->IsInAircraft()) {
+		
+		
+
 		UWorld::GetWorld()->AuthorityGameMode->RestartPlayer(PlayerController);
 		
 	}

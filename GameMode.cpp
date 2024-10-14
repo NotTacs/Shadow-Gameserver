@@ -11,7 +11,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	static bool bPlaylist = false;
 	if (!bPlaylist)
 	{
-		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_SolidGold_Solo.Playlist_SolidGold_Solo");
+		static UFortPlaylistAthena* Playlist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
 		GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
 		GameState->CurrentPlaylistInfo.PlaylistReplicationKey++;
@@ -223,8 +223,18 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 	return bRet;
 }
 
+inline void CreatePair(std::vector<std::pair<UFortItemDefinition*, int>> Vector, UFortItemDefinition* Def, int Count) {
+	std::pair<UFortItemDefinition*, int> Pair;
+	Pair.first = Def;
+	Pair.second = Count;
+	Vector.push_back(Pair);
+}
+
 APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)
 {
+
+	
+
 	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
 	for (int i = 0; i < GameMode->StartingItems.Num(); i++) {
 		FItemAndCount Item = GameMode->StartingItems[i];
@@ -232,7 +242,39 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
 
+	std::ofstream Log("Weapons.Log");
+
+	
+
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
+
+
+
+	if (bLateGame) {
+
+		UFortItemDefinition* AmmoLightBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
+		UFortItemDefinition* AmmoHeavyBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsLight.AthenaAmmoDataBulletsLight");
+		UFortItemDefinition* AmmoMediumBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
+		UFortItemDefinition* AmmoShells = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataShells.AthenaAmmoDataShells");
+
+		Inventory::GiveWorldItem(NewPlayer, AmmoLightBullets, 500, 0, true, false);
+		Inventory::GiveWorldItem(NewPlayer, AmmoHeavyBullets, 500, 0, true, false);
+		Inventory::GiveWorldItem(NewPlayer, AmmoMediumBullets, 500, 0, true, false);
+		Inventory::GiveWorldItem(NewPlayer, AmmoShells, 500, 0, true, false);
+
+
+		for (int i = 0; i < UObject::GObjects->Num(); i++) {
+			UObject* GObject = UObject::GObjects->GetByIndex(i);
+
+			if (!GObject) continue;
+
+			if (GObject->IsA(UFortItemDefinition::StaticClass()) && !GObject->IsDefaultObject()) {
+				Log << "[" << ((UFortItemDefinition*)GObject)->DisplayName.ToString() << "] " << GObject->GetName() << std::endl;
+			}
+		}
+
+		Log.close();
+	}
 
 	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
 
@@ -315,15 +357,15 @@ EFortTeam GameMode::PickTeamHook(AFortGameModeAthena* GameMode, uint8_t Preferre
 void GameMode::OnAircraftEnteredDropZone(AFortGameModeAthena* GM, AFortAthenaAircraft* Aircraft) {
 	auto GameState = (AFortGameStateAthena*)GM->GameState;
 
-	if (bLateGame) {
-		TArray<AActor*> Actors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingFoundation::StaticClass(), &Actors);
-		AActor* Poi = Actors[rand() % Actors.Num()];
+	
 
-		SZLOC = FVector(Poi->K2_GetActorLocation() + FVector(0, 0, 10000));
+	if (bLateGame) {
+		
+		static FVector AircraftLocation = ZoneLoc + FVector(0, 0, 10000);
+
 		Aircraft->FlightEndTime = 100.f;
 		Aircraft->FlightInfo.FlightSpeed = 1.0f;
-		Aircraft->FlightInfo.FlightStartLocation = (FVector_NetQuantize100)SZLOC;
+		Aircraft->FlightInfo.FlightStartLocation = (FVector_NetQuantize100)AircraftLocation;
 		Aircraft->FlightEndTime = 0.f;
 		GameState->OnRep_Aircraft();
 
