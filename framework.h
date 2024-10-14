@@ -188,24 +188,86 @@ inline void DumpAllMetalCards() {
 
 inline void (*SetZoneToIndexOG)(AFortGameModeAthena* GameMode, int a2);
 inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
+    auto Gamestate = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
+    auto Indicator = GameMode->SafeZoneIndicator;
     printf("SetZoneToIndexCalled \n");
+    static int LateGamePhase = 2;
 
-    if (bLateGame) {
-        if (auto Indicator = GameMode->SafeZoneIndicator) {
-            std::cout << "SafeZoneLocations: " << GameMode->SafeZoneLocations.Num();
+    static FVector ZoneLoc = GameMode->SafeZoneLocations[4];
+    Indicator->NextCenter.X = ZoneLoc.X;
+    Indicator->NextCenter.Y = ZoneLoc.Y;
+    Indicator->NextCenter.Z = ZoneLoc.Z;
 
-            int FirstZoneLoc = 10000;
-            int SecondZoneLoc = 5000;
-            int ThirdZoneLoc = 2500;
-            int FourthZoneLoc = 1250;
-            int FifthZoneloc = 625;
-            int SixthZoneLoc = 312.5;
-            int SevenZoneLoc = 156.25;
+    std::cout << "NextCenter: ("
+        << Indicator->NextCenter.X << ", "
+        << Indicator->NextCenter.Y << ", "
+        << Indicator->NextCenter.Z << ")" << std::endl;
+
+    static FVector_NetQuantize100 ZoneLocQuan = FVector_NetQuantize100{ ZoneLoc.X, ZoneLoc.Y, ZoneLoc.Z };
+
+    if (bLateGame)
+    {
+        SetZoneToIndexOG(GameMode, a2);
+
+        if (LateGamePhase == 2 || LateGamePhase == 3)
+        {
+            UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"skipshrinksafezone", nullptr);
+            printf("Phase %d: Safe zone shrink skipped.\n", LateGamePhase);
         }
+
+        if (LateGamePhase == 3)
+        {
+            if (Indicator)
+            {
+                Indicator->SafeZoneStartShrinkTime = Gamestate->GetServerWorldTimeSeconds();
+                Indicator->SafeZoneFinishShrinkTime = Gamestate->GetServerWorldTimeSeconds() + 0.2;
+
+                printf("Phase 3: SafeZoneStartShrinkTime: %f\n", Indicator->SafeZoneStartShrinkTime);
+                printf("Phase 3: SafeZoneFinishShrinkTime: %f\n", Indicator->SafeZoneFinishShrinkTime);
+                printf("Phase 3: NextRadius: %f, LastRadius: %f\n", Indicator->NextRadius, Indicator->LastRadius);
+            }
+        }
+
+        if (LateGamePhase == 4)
+        {
+            Indicator->NextCenter = ZoneLocQuan;
+            Indicator->NextRadius = 5000.f;
+            Indicator->LastRadius = 10000.f;
+
+            printf("Phase 4: NextRadius: %f, LastRadius: %f\n", Indicator->NextRadius, Indicator->LastRadius);
+        }
+
+        if (LateGamePhase == 5)
+        {
+            Indicator->NextCenter = ZoneLocQuan;
+            Indicator->NextRadius = 2500.f;
+            Indicator->LastRadius = 5000.f;
+
+            printf("Phase 5: NextRadius: %f, LastRadius: %f\n", Indicator->NextRadius, Indicator->LastRadius);
+        }
+
+        if (LateGamePhase == 6)
+        {
+            Indicator->NextCenter = ZoneLocQuan;
+            Indicator->NextRadius = 1650.f;
+            Indicator->LastRadius = 2500.f;
+
+            printf("Phase 6: NextRadius: %f, LastRadius: %f\n", Indicator->NextRadius, Indicator->LastRadius);
+        }
+
+        if (LateGamePhase == 7)
+        {
+            Indicator->NextCenter = ZoneLocQuan;
+            Indicator->NextRadius = 1090.f;
+            Indicator->LastRadius = 1650.f;
+
+            printf("Phase 7: NextRadius: %f, LastRadius: %f\n", Indicator->NextRadius, Indicator->LastRadius);
+        }
+
+        LateGamePhase++;
+
+        return;
     }
-
-    
-
     return SetZoneToIndexOG(GameMode, a2);
 }
 
