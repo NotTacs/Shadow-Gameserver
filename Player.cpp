@@ -30,6 +30,22 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 	PlayerState->SeasonLevelUIDisplay = Controller->XPComponent->CurrentLevel;
 	PlayerState->OnRep_SeasonLevelUIDisplay();
 
+	auto NavSystem = (UAthenaNavSystem*)GetWorld()->NavigationSystem;
+
+	if (NavSystem) {
+		std::cout << "NavSystem Is Avaliable" << std::endl;
+
+		if (NavSystem->MainNavData) {
+			std::cout << "NavData is already built " << std::endl;
+		}
+		else {
+
+			std::cout << "NavSystem: " << NavSystem->GetName() << std::endl;
+		}
+	}
+
+
+
 	return ServerReadyToStartMatch_OG(Controller);
 }
 

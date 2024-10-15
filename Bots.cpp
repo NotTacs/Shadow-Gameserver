@@ -103,10 +103,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 		Controller->AIEvaluators.Add(PropagateAwareness);
 	}
 
-	if (Controller->Blackboard) {
-
-	}
-
 	//Very Very HardCoded
 	Controller->CosmeticLoadoutBC = InBotData->CharacterCustomization->CustomizationLoadout;
 	Pawn->CosmeticLoadout = InBotData->CharacterCustomization->CustomizationLoadout;
@@ -141,6 +137,34 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	Controller->Inventory->Inventory.ItemInstances = TArray<class UFortWorldItem*>();
 	Controller->Inventory->SetOwner(Controller);
 
+	Controller->BehaviorTree = InBotData->BehaviorTree;
+	Controller->Skill = InBotData->SkillLevel;
+
+	if (Controller->CachedPatrollingComponent) {
+		Controller->CachedPatrollingComponent->CachedBotController = Controller;
+		TArray<AActor*> Paths;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaPatrolPath::StaticClass(), &Paths);
+
+		for (AActor* Path : Paths) {
+			AFortAthenaPatrolPath* PatrolPath = (AFortAthenaPatrolPath*)Path;
+			if (PatrolPath->PatrolPoints[0]->K2_GetActorLocation() == InSpawnLocation) {
+				Controller->CachedPatrollingComponent->PatrolPath = PatrolPath;
+				break;
+			}
+		}
+
+		Paths.Free();
+	}
+
+	if (Controller->CachedPatrollingComponent && Controller->CachedPatrollingComponent->PatrolPath) {
+		std::cout << "PatrolPath: " << Controller->CachedPatrollingComponent->PatrolPath->GetName() << std::endl;
+	}
+	else {
+		std::cout << "CachedComponent: " << Controller->CachedPatrollingComponent->GetName() << std::endl;
+	}
+
+	Controllers.push_back(Controller);
+
 	if (InBotData->StartupInventory)
 	{
 		for (int i = 0; i < InBotData->StartupInventory->Items.Num(); i++)
@@ -160,10 +184,6 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 			}
 		}
 	}
-
-	
-	
-	std::cout << BotManager->BotFactions.Num() << std::endl;
 
 	//std::cout << Controller->BotPlayerName.ToString() << std::endl;
 	//GameMode->ChangeName(Controller, UKismetTextLibrary::Conv_TextToString(InBotData->BotNameSettings->OverrideName), true);

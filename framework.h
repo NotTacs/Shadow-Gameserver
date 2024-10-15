@@ -13,6 +13,9 @@ static bool bCreative = false;
 inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
 
+
+inline ANavigationData* (*CreateNavigationDataInstanceInLevel)(UNavigationSystemV1* System, const FNavDataConfig& NavConfig, ULevel* SpawnLevel) = decltype(CreateNavigationDataInstanceInLevel)(ImageBase + 0x4808690);
+inline void (*RebuildAll)(UNavigationSystemV1* System, bool bIsLoadTime) = decltype(RebuildAll)(ImageBase + 0x48201A0);
 inline UUserWidget* (*CreateWidgetInstance)(APlayerController& OwnerPC, TSubclassOf<UUserWidget> Class, FName WidgetName) = decltype(CreateWidgetInstance)(ImageBase + 0x3C8ECE0);
 inline double (*InitQuests)(UFortQuestManager*, unsigned __int8 a2, char a3) = decltype(InitQuests)(ImageBase + 0x23A5B80);
 inline void (*Sub_16BDED0)(UNavigationSystemV1* System) = decltype(Sub_16BDED0)(ImageBase + 0x16BDED0);
@@ -180,7 +183,7 @@ inline __int64 (*GameStateShit)() = decltype(GameStateShit)(ImageBase + 0x2857EC
 
 static FVector ZoneLoc;
 
-inline bool bLateGame = true;
+inline bool bLateGame = false;
 
 inline void DumpAllMetalCards() {
     
@@ -272,6 +275,19 @@ inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
         return;
     }
     return SetZoneToIndexOG(GameMode, a2);
+}
+
+inline void (*InitForWorld_OG)(UAthenaNavSystem* NavigationSystem, UWorld* World, EFNavigationSystemRunMode NavigationSystemRunMode);
+inline void InitForWorld(UAthenaNavSystem* NavigationSystem, UWorld* World, EFNavigationSystemRunMode NavigationSystemRunMode) {
+    NavigationSystem->bAutoCreateNavigationData = true;
+    NavigationSystem->bAllowClientSideNavigation = true;
+    NavigationSystem->bAllowAutoRebuild = true;
+
+    AAthenaNavMesh::GetDefaultObj()->bCanBeMainNavData = true;
+
+    printf("NavMesh");
+
+    return InitForWorld_OG(NavigationSystem, World, NavigationSystemRunMode);
 }
 
 inline void (*sub_1A91DC0)(UObject* Mutator, int a2, __int64 a3);

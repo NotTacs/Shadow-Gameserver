@@ -46,6 +46,13 @@ void TickFlushHook(UNetDriver* Driver)
         Sleep(2000);
     }
 
+    if (GetAsyncKeyState(VK_F4)) {
+        std::cout << "Controllers: " << Controllers.size() << std::endl;
+        for (auto& Controller : Controllers) {
+            Controller->MoveToActor(Driver->ClientConnections[0]->PlayerController->Pawn, 0, true, false, true, nullptr, true);
+        }
+    }
+
     return TickFlushOG(Driver);
 }
 
@@ -110,6 +117,7 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x1A91DC0, sub_1A91DC0_Hook, (void**)&sub_1A91DC0);
     Hook(ImageBase + 0x18FD350, SetZoneToIndex, (void**)&SetZoneToIndexOG);
     Hook(ImageBase + 0x18E0730, GameMode::OnAircraftEnteredDropZone, (void**)&GameMode::OnAircraftEnteredDropZone_OG);
+    Hook(ImageBase + 0x48190E0, InitForWorld, (void**)&InitForWorld_OG);
     //Hook(ImageBase + 0x230C210, SetHasFinishedLoading, (void**)&SetHasFinishedLoading_OG);
     //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
 
@@ -188,8 +196,8 @@ DWORD WINAPI Main(LPVOID)
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineSession VeryVerbose", nullptr);
-    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineTournament VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogNavigation VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogNavigationDataBuild VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogParty VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogLevel VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogAthenaNavMesh VeryVerbose", nullptr);

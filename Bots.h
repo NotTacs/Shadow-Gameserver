@@ -3,6 +3,8 @@
 #include "framework.h"
 #include <fstream>
 
+inline std::vector<AFortAthenaAIBotController*> Controllers;
+
 void GiveItem(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def, int count = 999, int Level = 0);
 
 FGuid GetGuid(AFortAthenaAIBotController* Controller, UFortItemDefinition* Def);

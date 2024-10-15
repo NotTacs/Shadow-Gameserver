@@ -85,6 +85,9 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 				std::cout << "Spawner: " << Spawner->Class->GetName() << std::endl;
 			}
 		}
+
+		
+
 		bPlaylist = true;
 	}
 
@@ -188,17 +191,17 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		for (int i = 0; i < FloorLootActors.Num(); i++) {
 			auto Container = (ABuildingContainer*)FloorLootActors[i];
 			auto Entrys = GetItems(Container->SearchLootTierGroup);
-			Container->K2_GetActorLocation().Z + 50;
+			FVector Container2 = Container->K2_GetActorLocation() + FVector(0,0,50);
 
 			for (auto& item : Entrys) {
-				Inventory::SpawnPickup(item.ItemDefinition, Container->K2_GetActorLocation(), item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
+				Inventory::SpawnPickup(item.ItemDefinition, Container2, item.Count, EFortPickupSourceTypeFlag::FloorLoot, EFortPickupSpawnSource::Unset);
 
 				UFortWeaponRangedItemDefinition* Item = (UFortWeaponRangedItemDefinition*)item.ItemDefinition;
 
 				if (Item->IsA(UFortWeaponRangedItemDefinition::StaticClass()) && Item->GetAmmoWorldItemDefinition_BP() && Item->AmmoData.Get() != Item) {
 					auto AmmoDef = Item->GetAmmoWorldItemDefinition_BP();
 
-					Inventory::SpawnPickup(AmmoDef, Container->K2_GetActorLocation(), AmmoDef->DropCount, EFortPickupSourceTypeFlag::Container, EFortPickupSpawnSource::Unset);
+					Inventory::SpawnPickup(AmmoDef, Container2, AmmoDef->DropCount, EFortPickupSourceTypeFlag::Container, EFortPickupSpawnSource::Unset);
 				}
 			}
 			Container->K2_DestroyActor();
@@ -275,6 +278,18 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 
 		Log.close();
 	}
+
+
+	
+	AActor* SpawnLocator = SpawnActor<ADefaultPawn>(StartSpot->GetTransform());
+	UClass* Class = StaticLoadObject<UClass>("/Game/Athena/AI/Phoebe/BP_PlayerPawn_Athena_Phoebe.BP_PlayerPawn_Athena_Phoebe_C");
+	auto Test = (ABP_PlayerPawn_Athena_Phoebe_C*)GameMode->ServerBotManager->CachedBotMutator->SpawnBot(Class, SpawnLocator, SpawnLocator->K2_GetActorLocation(), FRotator(), false);
+
+	SpawnLocator->K2_DestroyActor();
+
+	auto Controller = (ABP_PhoebePlayerController_C*)Test->Controller;
+
+	Controller->MoveToLocation(Pawn->K2_GetActorLocation(), 50000, false, false, true, true, Controller->DefaultNavigationFilterClass, true);
 
 	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
 
