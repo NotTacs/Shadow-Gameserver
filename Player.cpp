@@ -37,14 +37,9 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 
 		if (NavSystem->MainNavData) {
 			std::cout << "NavData is already built " << std::endl;
-		}
-		else {
-
-			std::cout << "NavSystem: " << NavSystem->GetName() << std::endl;
+			std::cout << "NavDataSet: " << NavSystem->NavDataSet.Num() << std::endl;
 		}
 	}
-
-
 
 	return ServerReadyToStartMatch_OG(Controller);
 }

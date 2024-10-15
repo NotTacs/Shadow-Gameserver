@@ -8,7 +8,7 @@ using namespace SDK;
 #include "Minhook.h"
 
 
-static bool bCreative = false;
+static bool bCreative = true;
 
 inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
@@ -65,7 +65,7 @@ T* StaticLoadObject(std::string name)
 
 inline UWorld* GetWorld()
 {
-	return GEngine->GameViewport->World;
+    return *reinterpret_cast<UWorld**>(ImageBase + 0x8158708);
 }
 
 inline void Hook(uintptr_t Address, void* Hook, void** OG)
@@ -189,6 +189,18 @@ inline void DumpAllMetalCards() {
     
 }
 
+inline bool UWorld_Listen() {
+    static bool bListen = false;
+    if (!bListen) {
+        auto GameState = (AFortGameStateAthena*)GetWorld()->GameState;
+        auto GameMode = (AFortGameModeAthena*)GetWorld()->AuthorityGameMode;
+        
+        bListen = true;
+    }
+    
+    return true;
+}
+
 inline void (*SetZoneToIndexOG)(AFortGameModeAthena* GameMode, int a2);
 inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
     auto Gamestate = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
@@ -289,6 +301,8 @@ inline void InitForWorld(UAthenaNavSystem* NavigationSystem, UWorld* World, EFNa
 
     return InitForWorld_OG(NavigationSystem, World, NavigationSystemRunMode);
 }
+
+
 
 inline void (*sub_1A91DC0)(UObject* Mutator, int a2, __int64 a3);
 inline void sub_1A91DC0_Hook(AFortAthenaMutator_Mash* Mutator, int a2, UFortDifficultyEncounterSettings* a3) {

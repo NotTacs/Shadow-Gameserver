@@ -2,6 +2,7 @@
 #include "Inventory.h"
 #include "Looting.h"
 #include "Events.h"
+#include "GameSessions.h"
 
 bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 {
@@ -29,6 +30,18 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 		GameState->bGameModeWillSkipAircraft = Playlist->bSkipAircraft;
 		GameMode->bSpawnAllStuff = true;
+
+		if (bGameSessionsEnabled) {
+			if (GameMode->GameSession) {
+				std::cout << "GameSessionClass: " << GameMode->GameSession->Class << std::endl;
+			}
+			else {
+				std::cout << "EnableGameSession" << std::endl;
+				TArray<AActor*> Actors;
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortGameSessionDedicatedAthena::StaticClass(), &Actors);
+				GameMode->GameSession = Actors[0]->IsDefaultObject() ? (AFortGameSessionDedicatedAthena*)Actors[1] : (AFortGameSessionDedicatedAthena*)Actors[0];
+			}
+		}
 		
 
 		GameState->WarmupCountdownEndTime = TimeSeconds + Duration;
@@ -141,7 +154,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 			TSoftObjectPtr<UWorld> World = CurrentPlaylist()->AdditionalLevels[i];
 			FString LevelName = UKismetStringLibrary::Conv_NameToString(World.ObjectID.AssetPathName);
 			ULevelStreamingDynamic::LoadLevelInstance(GetWorld(), LevelName, {}, {}, nullptr, FString());
-			FAdditionalLevelStreamed NewLevel{World.ObjectID.AssetPathName,false};
+			FAdditionalLevelStreamed NewLevel{ World.ObjectID.AssetPathName,false };
 			GameState->AdditionalPlaylistLevelsStreamed.Add(NewLevel);
 		}
 		for (int i = 0; i < CurrentPlaylist()->AdditionalLevelsServerOnly.Num(); i++) {
@@ -152,7 +165,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 			GameState->AdditionalPlaylistLevelsStreamed.Add(NewLevel);
 		}
 		GameState->OnFinishedShowingAdditionalPlaylistLevel();
-		GameState->OnRep_AdditionalPlaylistLevelsStreamed(); 
+		GameState->OnRep_AdditionalPlaylistLevelsStreamed();
 		GameMode->HandleAllPlaylistLevelsVisible();
 
 		GameState->OnRep_CurrentPlaylistId();
@@ -235,9 +248,6 @@ inline void CreatePair(std::vector<std::pair<UFortItemDefinition*, int>> Vector,
 
 APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)
 {
-
-	
-
 	auto GameState = (AFortGameStateAthena*)GameMode->GameState;
 	for (int i = 0; i < GameMode->StartingItems.Num(); i++) {
 		FItemAndCount Item = GameMode->StartingItems[i];
@@ -245,51 +255,7 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	}
 	Inventory::GiveWorldItem(NewPlayer, NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
 
-	std::ofstream Log("Weapons.Log");
-
-	
-
 	auto Pawn = (AFortPlayerPawnAthena*)GameMode->SpawnDefaultPawnAtTransform(NewPlayer, StartSpot->GetTransform());
-
-
-
-	if (bLateGame) {
-
-		UFortItemDefinition* AmmoLightBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
-		UFortItemDefinition* AmmoHeavyBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsLight.AthenaAmmoDataBulletsLight");
-		UFortItemDefinition* AmmoMediumBullets = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataBulletsMedium.AthenaAmmoDataBulletsMedium");
-		UFortItemDefinition* AmmoShells = StaticLoadObject<UFortItemDefinition>("/Game/Athena/Items/Ammo/AthenaAmmoDataShells.AthenaAmmoDataShells");
-
-		Inventory::GiveWorldItem(NewPlayer, AmmoLightBullets, 500, 0, true, false);
-		Inventory::GiveWorldItem(NewPlayer, AmmoHeavyBullets, 500, 0, true, false);
-		Inventory::GiveWorldItem(NewPlayer, AmmoMediumBullets, 500, 0, true, false);
-		Inventory::GiveWorldItem(NewPlayer, AmmoShells, 500, 0, true, false);
-
-
-		for (int i = 0; i < UObject::GObjects->Num(); i++) {
-			UObject* GObject = UObject::GObjects->GetByIndex(i);
-
-			if (!GObject) continue;
-
-			if (GObject->IsA(UFortItemDefinition::StaticClass()) && !GObject->IsDefaultObject()) {
-				Log << "[" << ((UFortItemDefinition*)GObject)->DisplayName.ToString() << "] " << GObject->GetName() << std::endl;
-			}
-		}
-
-		Log.close();
-	}
-
-
-	
-	AActor* SpawnLocator = SpawnActor<ADefaultPawn>(StartSpot->GetTransform());
-	UClass* Class = StaticLoadObject<UClass>("/Game/Athena/AI/Phoebe/BP_PlayerPawn_Athena_Phoebe.BP_PlayerPawn_Athena_Phoebe_C");
-	auto Test = (ABP_PlayerPawn_Athena_Phoebe_C*)GameMode->ServerBotManager->CachedBotMutator->SpawnBot(Class, SpawnLocator, SpawnLocator->K2_GetActorLocation(), FRotator(), false);
-
-	SpawnLocator->K2_DestroyActor();
-
-	auto Controller = (ABP_PhoebePlayerController_C*)Test->Controller;
-
-	Controller->MoveToLocation(Pawn->K2_GetActorLocation(), 50000, false, false, true, true, Controller->DefaultNavigationFilterClass, true);
 
 	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
 

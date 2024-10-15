@@ -4,6 +4,7 @@
 #include "Abilities.h"
 #include "Player.h"
 #include "Bots.h"
+#include "GameSessions.h"
 
 bool KickPlayer() {
     std::cout << "KickPlayer" << std::endl;
@@ -101,9 +102,10 @@ DWORD WINAPI Main(LPVOID)
 
 
     Hook(ImageBase + 0x4640A30, GameMode::ReadyToStartMatchHook, nullptr);
-    Hook(ImageBase + 0x45c9d90, GetNetMode, nullptr);
-    //Hook(ImageBase + 0x3eb6780, GetNetMode, nullptr);
-    //Hook(ImageBase + 0x1e23840, ChangeGameSessionId, nullptr);
+    Hook(ImageBase + 0x45c9d90, GetNetMode, nullptr); //UWorld::GetNetMode
+
+    Hook(ImageBase + 0x3eb6780, GetNetMode, nullptr); //AActor::GetNetMode
+    Hook(ImageBase + 0x1e23840, ChangeGameSessionId, nullptr);
     Hook(ImageBase + 0x4155600, KickPlayer, nullptr);
     Hook(ImageBase + 0x18F6250, GameMode::SpawnDefaultPawnFor, nullptr);
     Hook(ImageBase + 0x42C3ED0, TickFlushHook, (void**)&TickFlushOG);
@@ -116,12 +118,12 @@ DWORD WINAPI Main(LPVOID)
     Hook(ImageBase + 0x1A6D300, sub_1A6D300_Hook, (void**)&sub_1A6D300);
     Hook(ImageBase + 0x1A91DC0, sub_1A91DC0_Hook, (void**)&sub_1A91DC0);
     Hook(ImageBase + 0x18FD350, SetZoneToIndex, (void**)&SetZoneToIndexOG);
-    Hook(ImageBase + 0x18E0730, GameMode::OnAircraftEnteredDropZone, (void**)&GameMode::OnAircraftEnteredDropZone_OG);
-    Hook(ImageBase + 0x48190E0, InitForWorld, (void**)&InitForWorld_OG);
-    //Hook(ImageBase + 0x230C210, SetHasFinishedLoading, (void**)&SetHasFinishedLoading_OG);
-    //Hook(ImageBase + 0x18E6B20, GameMode::PickTeamHook, nullptr);
 
-    
+    Hook(ImageBase + 0x18E0730, GameMode::OnAircraftEnteredDropZone, (void**)&GameMode::OnAircraftEnteredDropZone_OG);
+    VFTHook(UAthenaNavSystem::GetDefaultObj()->VTable, 0x53, InitForWorld, (void**)&InitForWorld_OG); //I think this is needed
+    if (bGameSessionsEnabled) {
+        GameSessions::HookAll();
+    }
 
     std::vector<uint64_t> NullFuncs = { ImageBase + 0x3ca10c0, ImageBase + 0x2d95e00, ImageBase + 0x3262100, ImageBase + 0x1e23840, ImageBase + 0x2d95dc0 };
     std::vector<uint64_t> RetTrueFuncs = { ImageBase + 0x4155600, ImageBase + 0x2DBCBA0 };
@@ -159,6 +161,8 @@ DWORD WINAPI Main(LPVOID)
 
     uint64_t GIsClient = ImageBase + 0x804b659;
     *(bool*)GIsClient = false;
+
+    *(bool*)(ImageBase + 0x804B65A) = true; //GISServer
 
     DWORD d;
     VirtualProtect(UFortControllerComponent_Aircraft::GetDefaultObj()->VTable[0x89], 8, PAGE_EXECUTE_READWRITE, &d);
