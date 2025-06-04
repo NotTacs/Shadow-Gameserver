@@ -1,2 +1,1 @@
-# Shadow-Gameserver
- Shadow V1 - Gameserver
+Old gameserver for shadow. shadow was a 12.41 project of mine that I still didn't really know what I was doing at the time so most of the code is shit. There is mabye like a couple things im proud of with this but overall not that great of gs, have fun with it and if you are going to use it for a project then two things (good luck), and also credit me.
