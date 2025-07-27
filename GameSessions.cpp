@@ -1,3 +1,4 @@
+
 #include "GameSessions.h"
 
 __int64* GameSessions::GetGameSessionClass_Hook(AFortGameModeAthena* GameMode, __int64* SomethingIdk) {

@@ -1,3 +1,4 @@
+
 #include "Bots.h"
 
 #include <intrin.h>
@@ -137,8 +138,18 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	Controller->Inventory->Inventory.ItemInstances = TArray<class UFortWorldItem*>();
 	Controller->Inventory->SetOwner(Controller);
 
-	Controller->BehaviorTree = InBotData->BehaviorTree;
+	//Controller->BehaviorTree = InBotData->BehaviorTree;
 	Controller->Skill = InBotData->SkillLevel;
+	if (Controller->Blackboard)
+	{
+		std::cout << "Blackboard: " << Controller->Blackboard->GetName() << std::endl;
+	}
+	Controller->UseBlackboard(InBotData->BehaviorTree->BlackboardAsset, &Controller->Blackboard);
+	std::cout << "Blackboard1: " << Controller->Blackboard1->GetName() << std::endl;
+	std::cout << "Blackboard: " << Controller->Blackboard->GetName() << std::endl;
+	Controller->RunBehaviorTree(Controller->BehaviorTree);
+
+	std::cout << "VTable: " << __int64(Controller->VTable) - ImageBase << std::endl;
 
 	if (Controller->CachedPatrollingComponent) {
 		Controller->CachedPatrollingComponent->CachedBotController = Controller;
@@ -164,6 +175,53 @@ AFortPlayerPawnAthena* SpawnBot(UFortServerBotManagerAthena* BotManager, const s
 	}
 
 	Controllers.push_back(Controller);
+
+	static bool (*IsCompatibleWith)(UBlackboardComponent*, UBlackboardData*) = decltype(IsCompatibleWith)(ImageBase + 0x4902D50);
+
+	bool IsCompatible = IsCompatibleWith(Controller->Blackboard, InBotData->BehaviorTree->BlackboardAsset);
+
+	std::cout << "IsCompatible: " << IsCompatible << std::endl;
+
+	static UObject* (*StaticConstructObject_Internal)(UClass*, UObject*, FName, EObjectFlags, EInternalObjectFlags, UObject*, bool, void*, bool, UPackage*) = decltype(StaticConstructObject_Internal)(ImageBase + 0x2DBFAB0);
+
+	if (Controller->IsDefaultObject())
+	{
+				std::cout << "Controller is a default object, cannot create components." << std::endl;
+	}
+
+	if (Controller->BrainComponent)
+	{
+		std::cout << "BrainComponent: " << Controller->BrainComponent->GetName() << std::endl;
+	}
+
+	if (Controller->PerceptionComponent)
+	{
+		std::cout << "PerceptionComponent: " << Controller->PerceptionComponent->GetName() << std::endl;
+	}
+
+	if (auto Manager = Controller->CachedBotManager)
+	{
+		std::cout << "CachedBotManager: " << Manager->GetName() << std::endl;
+		bool Idk = *reinterpret_cast<bool*>(__int64(Manager) + 0x4D0);
+		std::cout << "Idk: " << Idk << std::endl;
+	
+	}
+
+	auto& NavAgentprops = Controller->Character->CharacterMovement->NavAgentProps;
+	std::cout << "AgentHeight : " << NavAgentprops.AgentHeight;
+	std::cout << "AgentRadius: " << NavAgentprops.AgentRadius;
+	
+
+	printf("Pawn: %s\n", Pawn->GetName().c_str());
+
+	static INavigationDataInterface* (*GetNavDataForActor)(UObject*) = decltype(GetNavDataForActor)(ImageBase + 0x4814A90);
+	INavigationDataInterface* NavData = GetNavDataForActor(Pawn);
+	
+	if (NavData)
+	{
+		printf("NavData\n");
+
+	}
 
 	if (InBotData->StartupInventory)
 	{

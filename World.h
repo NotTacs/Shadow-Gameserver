@@ -1,6 +1,6 @@
 #pragma once
 
-int GetNetMode()
+FORCEINLINE int GetNetMode()
 {
 	return 1; //NM_DEDICATEDSERVER
 }

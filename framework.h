@@ -8,7 +8,7 @@ using namespace SDK;
 #include "Minhook.h"
 
 
-static bool bCreative = true;
+static bool bCreative = false;
 
 inline uintptr_t ImageBase = uintptr_t(GetModuleHandle(0));
 inline UFortEngine* GEngine = *(UFortEngine**)(ImageBase + 0x8155E78);
@@ -96,6 +96,14 @@ inline __forceinline void PatchByte(uintptr_t ptr, uint8_t byte)
     DWORD og;
     VirtualProtect(LPVOID(ptr), 1, PAGE_EXECUTE_READWRITE, &og);
     *(uint8_t*)(ptr) = byte;
+    VirtualProtect(LPVOID(ptr), 1, og, &og);
+}
+
+inline __forceinline void PatchByte16(uintptr_t ptr, uint16_t byte)
+{
+    DWORD og;
+    VirtualProtect(LPVOID(ptr), 1, PAGE_EXECUTE_READWRITE, &og);
+    *(uint16_t*)(ptr) = byte;
     VirtualProtect(LPVOID(ptr), 1, og, &og);
 }
 
@@ -292,16 +300,30 @@ inline void SetZoneToIndex(AFortGameModeAthena* GameMode, int a2) {
 inline void (*InitForWorld_OG)(UAthenaNavSystem* NavigationSystem, UWorld* World, EFNavigationSystemRunMode NavigationSystemRunMode);
 inline void InitForWorld(UAthenaNavSystem* NavigationSystem, UWorld* World, EFNavigationSystemRunMode NavigationSystemRunMode) {
     NavigationSystem->bAutoCreateNavigationData = true;
-    NavigationSystem->bAllowClientSideNavigation = true;
-    NavigationSystem->bAllowAutoRebuild = true;
-
-    AAthenaNavMesh::GetDefaultObj()->bCanBeMainNavData = true;
-
+    //NavigationSystem->DataGatheringMode = ENavDataGatheringModeConfig::Instant;
     printf("NavMesh");
+
+	printf("NavSystem: %s\n", NavigationSystem->GetName().c_str());
+
+    for (auto& Agents : NavigationSystem->SupportedAgents)
+    {
+        std::cout << "AgentName: " << Agents.Name.ToString() << std::endl;
+        std::cout << "AgentRadius: " << Agents.AgentRadius << std::endl;
+        std::cout << "AgentHeight: " << Agents.AgentHeight << std::endl;
+    }
 
     return InitForWorld_OG(NavigationSystem, World, NavigationSystemRunMode);
 }
 
+
+inline UNavigationSystemBase* (*CreateAndConfigureNavigationSystemOG)(UAthenaNavSystemConfig* System, UWorld* World);
+inline UNavigationSystemBase* CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* System, UWorld* World)
+{
+	printf("CreateAndConfigureNavigationSystem Called\n");
+    System->bAutoSpawnMissingNavData = true;
+    System->bPrioritizeNavigationAroundSpawners = true;
+    return CreateAndConfigureNavigationSystemOG(System, World);
+}
 
 
 inline void (*sub_1A91DC0)(UObject* Mutator, int a2, __int64 a3);
@@ -407,4 +429,41 @@ inline void GiveAccolade(AFortPlayerControllerAthena* Controller, UFortAccoladeI
     Info.Priority = Def->GetPriority();
     Info.SimulatedText = Def->Description;
     Controller->XPComponent->OnXPEvent(Info);
+}
+
+enum class EInternalObjectFlags : int32
+{
+    None = 0,
+
+    // NOTE that the minimum flag bit index is currently 14. See EInternalObjectFlags_MinFlagBitIndex and UE_ENABLE_FUOBJECT_ITEM_PACKING in UObjectArray.h
+
+    ReachabilityFlag0 = 1 << 14, ///< One of the flags used by Garbage Collector to determine UObject's reachability state
+    ReachabilityFlag1 = 1 << 15, ///< One of the flags used by Garbage Collector to determine UObject's reachability state
+    ReachabilityFlag2 = 1 << 16, ///< One of the flags used by Garbage Collector to determine UObject's reachability state
+
+    AutoRTFMConstructionAborted = 1 << 17, //< Object was constructed in an AutoRTFM transaction that has been aborted
+    Remote = 1 << 18, //< Object is no longer owned by this process
+    RemoteReference = 1 << 19, //< Object referenced by remote process
+    LoaderImport = 1 << 20, ///< Object is ready to be imported by another package during loading
+    Garbage = 1 << 21, ///< Garbage from logical point of view and should not be referenced. This flag is mirrored in EObjectFlags as RF_Garbage for performance
+    AsyncLoadingPhase1 = 1 << 22, ///< Object is being asynchronously loaded.
+    ReachableInCluster = 1 << 23, ///< External reference to object in cluster exists
+    ClusterRoot = 1 << 24, ///< Root of a cluster
+    Native = 1 << 25, ///< Native (UClass only). 
+    Async = 1 << 26, ///< Object exists only on a different thread than the game thread.
+    AsyncLoadingPhase2 = 1 << 27, ///< Object is being asynchronously loaded.
+    Unreachable = 1 << 28, ///< Object is not reachable on the object graph.
+    RefCounted = 1 << 29, ///< Object currently has ref-counts associated with it.
+    RootSet = 1 << 30, ///< Object will not be garbage collected, even if unreferenced.
+    PendingConstruction = 1 << 31, ///< Object didn't have its class constructor called yet (only the UObjectBase one to initialize its most basic members)
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // DO NOT ADD composite flags to EInternalObjectFlags. Debugger visualisations have trouble displaying composite flag values as text.
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+};
+
+inline const wchar_t* (*GetCommandLineOG)();
+inline const wchar_t* GetCommandLineHook()
+{
+    return GetCommandLine();
 }

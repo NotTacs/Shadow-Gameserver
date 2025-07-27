@@ -1,3 +1,4 @@
+
 #include "framework.h"
 #include "GameMode.h"
 #include "World.h"
@@ -182,7 +183,7 @@ DWORD WINAPI Main(LPVOID)
 
     //VFTHook(AFortGameModeAthena::GetDefaultObj()->VTable, 0xCE, GameMode::HandleStartingNewPlayer, (void**)GameMode::HandleStartingNewPlayer_OG);
 
-    VFTHook(UNavigationSystemV1::GetDefaultObj()->VTable, 0x5B, rettrue, nullptr);
+    //VFTHook(UNavigationSystemV1::GetDefaultObj()->VTable, 0x5B, rettrue, nullptr);
 
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x230, ServerCreateBuildingActor, (void**)&ServerCreateBuildingActor_OG);
 
@@ -197,6 +198,18 @@ DWORD WINAPI Main(LPVOID)
     VFTHook(UFortControllerComponent_Interaction::GetDefaultObj()->VTable, 0x8B, ServerAttemptInteract, (void**)&ServerAttemptInteract_OG);
 
     VFTHook(AFortPlayerControllerAthena::GetDefaultObj()->VTable, 0x4F0, ServerClientIsReadyToRespawn, (void**)&ServerClientIsReadyToRespawn_OG);
+
+    bool PhoebeEnable = *(bool*)(ImageBase + 0x76D6CC8);
+	printf("PhoebeEnable: %d\n", PhoebeEnable);
+    int MaxSpawnAmount = *(int*)(ImageBase + 0x76D6CCC);
+	printf("MaxSpawnAmount: %d\n", MaxSpawnAmount);
+
+    Hook(ImageBase + 0x2BB4D00, GetCommandLineHook, (void**)&GetCommandLineOG);
+
+    Hook(ImageBase + 0x4807F60, CreateAndConfigureNavigationSystem, (void**)&CreateAndConfigureNavigationSystemOG);
+
+
+    *(bool*)(ImageBase + 0x7F1CA25) = true;
 
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineGame VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogOnlineParty VeryVerbose", nullptr);
@@ -228,6 +241,7 @@ DWORD WINAPI Main(LPVOID)
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortPlacement VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogAIModule VeryVerbose", nullptr);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogFortMutatorInventoryOverride VeryVerbose", nullptr);
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), L"log LogNavigation VeryVerbose", nullptr);
 
 
     return 0;

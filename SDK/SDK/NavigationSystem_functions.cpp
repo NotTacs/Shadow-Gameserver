@@ -7,7 +7,6 @@
 */
 
 // Package: NavigationSystem
-
 #include "Basic.hpp"
 
 #include "NavigationSystem_classes.hpp"

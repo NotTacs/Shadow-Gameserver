@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;REVERSE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
@@ -175,7 +175,6 @@
     <ClCompile Include="SDK\SDK\GameplayAbilities_functions.cpp" />
     <ClCompile Include="SDK\SDK\NavigationSystem_functions.cpp" />
     <ClCompile Include="SDK\SDK\UMG_functions.cpp" />
-    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="minhook.lib" />

@@ -1,3 +1,4 @@
+
 #include "GameMode.h"
 #include "Inventory.h"
 #include "Looting.h"
@@ -55,18 +56,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 			GameMode->ServerBotManager->CachedGameMode = GameMode;
 			GameMode->ServerBotManager->CachedGameState = GameState;
 
-			TArray<AActor*> Actors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaMutator_Bots::StaticClass(), &Actors);
-			for (AActor* Actor : Actors) {
-				static bool bFirst = false;
-				if (!bFirst) {
-					GameMode->ServerBotManager->CachedBotMutator = ((AFortAthenaMutator_Bots*)Actor);
-					bFirst = true;
-				}
-			}
-			if (!GameMode->ServerBotManager->CachedBotMutator) {
-				GameMode->ServerBotManager->CachedBotMutator = SpawnActor<AFortAthenaMutator_Bots>();
-			}
+
 
 			GameMode->AIDirector = SpawnActor<AFortAIDirector>();
 			if (GameMode->AIDirector) {
@@ -221,6 +211,21 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 		}
 		FloorLootActors.Free();
 
+		TArray<AActor*> Actors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortAthenaMutator_Bots::StaticClass(), &Actors);
+		for (AActor* Actor : Actors) {
+			static bool bFirst = false;
+			if (!bFirst) {
+				GameMode->ServerBotManager->CachedBotMutator = ((AFortAthenaMutator_Bots*)Actor);
+				bFirst = true;
+			}
+		}
+
+		*reinterpret_cast<bool*>(__int64(GameMode->ServerBotManager) + 0x4D0) = 1;
+
+		//*reinterpret_cast<int*>(__int64(GameMode->ServerBotManager->CachedBotMutator) + 0x430) = 1;
+
+
 		bListening = true;
 	}
 
@@ -228,7 +233,7 @@ bool GameMode::ReadyToStartMatchHook(AFortGameModeAthena* GameMode)
 
 	if (!bRet) {
 		float TimeSeconds = UGameplayStatics::GetTimeSeconds(GetWorld());
-		float Duration = 120.f;
+		float Duration = 180.f;
 
 		GameState->WarmupCountdownEndTime = TimeSeconds + Duration;
 		GameMode->WarmupCountdownDuration = Duration;
@@ -260,6 +265,8 @@ APawn* GameMode::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerC
 	UFortQuestManager* QuestManager = NewPlayer->GetQuestManager(GameMode->AssociatedSubGame);
 
 	QuestManager->EnableQuestStateLogging();
+
+
 
 	return Pawn;
 }

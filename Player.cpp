@@ -1,3 +1,4 @@
+
 #include "Player.h"
 #include "Bots.h"
 #include "SDK/SDK/FortniteGame_parameters.hpp"
@@ -38,6 +39,27 @@ void ServerReadyToStartMatch(AFortPlayerControllerAthena* Controller) {
 		if (NavSystem->MainNavData) {
 			std::cout << "NavData is already built " << std::endl;
 			std::cout << "NavDataSet: " << NavSystem->NavDataSet.Num() << std::endl;
+
+			if (!NavSystem->IsNavigationBeingBuilt(UWorld::GetWorld()))
+			{
+				Build(NavSystem);
+			}
+
+			TArray<AActor*> Actors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AVolume::StaticClass(), &Actors);
+			for (AActor* Actor : Actors) {
+				if (Actor->IsA(AVolume::StaticClass())) {
+					AVolume* Volume = (AVolume*)Actor;
+					if (Volume->GetName().contains("NavMeshBoundsVolume")) {
+						std::cout << "NavMeshBoundsVolume" << std::endl;
+						ANavMeshBoundsVolume* NavMeshBoundsVolume = (ANavMeshBoundsVolume*)Volume;
+						FVector Origin;
+						FVector Extent;
+						NavMeshBoundsVolume->GetActorBounds(false, &Origin, &Extent, false);
+						printf("Origin: {%f, %f, %f}, Extent: {%f,%f,%f}\n", Origin.X, Origin.Y, Origin.Z, Extent.X, Extent.Y, Extent.Z);
+					}
+				}
+			}
 		}
 	}
 

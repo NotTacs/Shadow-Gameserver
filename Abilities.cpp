@@ -1,3 +1,4 @@
+
 #include "Abilities.h"
 
 void Abilities::GiveAbilitySet(AFortPawn* Pawn, UFortAbilitySet* Set) {

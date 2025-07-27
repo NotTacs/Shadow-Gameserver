@@ -71,9 +71,6 @@
     <ClCompile Include="GameMode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="World.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SDK\SDK\FortniteGame_functions.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
